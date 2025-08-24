@@ -21,6 +21,7 @@ export interface CreateProgramData {
 
 export interface UniversityFilters {
   country?: string;
+  region?: string;
   city?: string;
   programName?: string;
   programLevel?: string;
@@ -28,11 +29,29 @@ export interface UniversityFilters {
 }
 
 export class UniversityModel {
+  // Mapping of regions to countries for study purposes
+  private static getCountriesByRegion(region: string): string[] {
+    const regionMap: Record<string, string[]> = {
+      'europe': ['France', 'Germany', 'Netherlands', 'Italy', 'Belgium', 'Luxembourg', 'Estonia']
+    };
+    
+    return regionMap[region.toLowerCase()] || [];
+  }
   static async findAll(filters: UniversityFilters = {}): Promise<UniversityWithPrograms[]> {
     try {
       const where: Prisma.UniversityWhereInput = {};
 
-      if (filters.country) {
+      // Handle region vs country logic
+      if (filters.region && !filters.country) {
+        // If only region is specified, get all universities in that region
+        const regionCountries = this.getCountriesByRegion(filters.region);
+        if (regionCountries.length > 0) {
+          where.country = {
+            in: regionCountries
+          };
+        }
+      } else if (filters.country) {
+        // If country is specified, filter by specific country
         where.country = {
           contains: filters.country
         };

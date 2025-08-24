@@ -9,7 +9,7 @@
     "build": "prisma generate && tsc",
     "start": "node dist/server.js",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx src/scripts/seed.ts",
+    "db:seed": "tsx src/scripts/seed-european-universities.ts",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio"
   },

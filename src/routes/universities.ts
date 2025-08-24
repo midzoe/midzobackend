@@ -8,6 +8,7 @@ router.get('/', async (req, res) => {
   try {
     const filters: UniversityFilters = {
       country: req.query.country as string,
+      region: req.query.region as string,
       city: req.query.city as string,
       programName: req.query.program as string,
       programLevel: req.query.level as string,
@@ -42,6 +43,7 @@ router.get('/search', async (req, res) => {
   try {
     const {
       country,
+      region,
       city,
       program,
       level,
@@ -52,6 +54,7 @@ router.get('/search', async (req, res) => {
 
     const filters: UniversityFilters = {
       country: country as string,
+      region: region as string,
       city: city as string,
       programName: program as string,
       programLevel: level as string,
@@ -87,6 +90,26 @@ router.get('/search', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to search universities'
+    });
+  }
+});
+
+// GET /api/universities/regions - Get all available regions for study
+router.get('/regions', async (req, res) => {
+  try {
+    const regions = [
+      'Europe'
+    ];
+
+    res.json({
+      success: true,
+      data: regions
+    });
+  } catch (error) {
+    console.error('Error fetching regions:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch regions'
     });
   }
 });
