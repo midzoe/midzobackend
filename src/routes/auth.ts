@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import jwt from 'jsonwebtoken';
+import { sign } from 'jsonwebtoken';
 import { UserModel } from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
 
@@ -20,10 +20,9 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const token = jwt.sign(
+    const token = sign(
       { userId: user.id, username: user.username },
-      process.env.JWT_SECRET || 'your_jwt_secret',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+      process.env.JWT_SECRET || 'your_jwt_secret'
     );
 
     res.json({
@@ -33,8 +32,8 @@ router.post('/login', async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name
+        firstName: user.firstName,
+        lastName: user.lastName
       }
     });
   } catch (error) {
@@ -67,15 +66,14 @@ router.post('/register', async (req, res) => {
       username,
       email,
       password,
-      first_name,
-      last_name,
+      firstName: first_name,
+      lastName: last_name,
       phone
     });
 
-    const token = jwt.sign(
+    const token = sign(
       { userId: newUser.id, username: newUser.username },
-      process.env.JWT_SECRET || 'your_jwt_secret',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+      process.env.JWT_SECRET || 'your_jwt_secret'
     );
 
     res.status(201).json({
@@ -85,8 +83,8 @@ router.post('/register', async (req, res) => {
         id: newUser.id,
         username: newUser.username,
         email: newUser.email,
-        first_name: newUser.first_name,
-        last_name: newUser.last_name
+        firstName: newUser.firstName,
+        lastName: newUser.lastName
       }
     });
   } catch (error) {
@@ -105,8 +103,8 @@ router.get('/profile', authenticateToken, async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         phone: user.phone,
         created_at: user.created_at
       }
@@ -124,8 +122,8 @@ router.put('/profile', authenticateToken, async (req, res) => {
     const { first_name, last_name, email, phone } = req.body;
 
     const updatedUser = await UserModel.update(user.id, {
-      first_name,
-      last_name,
+      firstName: first_name,
+      lastName: last_name,
       email,
       phone
     });
@@ -140,8 +138,8 @@ router.put('/profile', authenticateToken, async (req, res) => {
         id: updatedUser.id,
         username: updatedUser.username,
         email: updatedUser.email,
-        first_name: updatedUser.first_name,
-        last_name: updatedUser.last_name,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
         phone: updatedUser.phone,
         updated_at: updatedUser.updated_at
       }
