@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { sign } from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 import { UserModel } from '../models/User.js';
 import { authenticateToken } from '../middleware/auth.js';
 const router = Router();
@@ -14,7 +14,7 @@ router.post('/login', async (req, res) => {
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
-        const token = sign({ userId: user.id, username: user.username }, process.env.JWT_SECRET || 'your_jwt_secret');
+        const token = jwt.sign({ userId: user.id, username: user.username }, process.env.JWT_SECRET || 'your_jwt_secret');
         res.json({
             success: true,
             token,
@@ -56,7 +56,7 @@ router.post('/register', async (req, res) => {
             lastName: last_name,
             phone
         });
-        const token = sign({ userId: newUser.id, username: newUser.username }, process.env.JWT_SECRET || 'your_jwt_secret');
+        const token = jwt.sign({ userId: newUser.id, username: newUser.username }, process.env.JWT_SECRET || 'your_jwt_secret');
         res.status(201).json({
             success: true,
             token,
