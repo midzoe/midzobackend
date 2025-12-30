@@ -1,4 +1,4 @@
-import prisma from '../config/database.js';
+import prisma from '../../lib/prisma';
 
 // Types temporaires - seront remplacés par les vrais types Prisma une fois générés
 export type CategoryType = any;
@@ -76,5 +76,3 @@ export class CategoryModel {
   }
 }
 
-// Export des types pour compatibilité
-export { CategoryModel as default, CategoryType as Category, ServiceType as Service };

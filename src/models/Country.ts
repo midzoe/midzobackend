@@ -1,4 +1,4 @@
-import prisma from '../config/database.js';
+import prisma from '../../lib/prisma';
 
 // Types temporaires - seront remplacés par les vrais types Prisma une fois générés
 export type CountryType = any;
@@ -159,13 +159,3 @@ export class CountryModel {
   }
 }
 
-// Export des types pour compatibilité
-export { 
-  CountryModel as default, 
-  CountryType as Country, 
-  CountryQuickFactType as CountryQuickFact,
-  CountryTraditionType as CountryTradition,
-  CountryCuisineType as CountryCuisine,
-  CountryPlaceType as CountryPlace,
-  CountryTrendType as CountryTrend
-};

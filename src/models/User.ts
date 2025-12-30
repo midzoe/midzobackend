@@ -1,4 +1,4 @@
-import prisma from '../config/database.js';
+import prisma from '../../lib/prisma';
 // import { User, Prisma } from '@prisma/client';
 
 export type UserWithoutPassword = any;

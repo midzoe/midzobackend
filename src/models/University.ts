@@ -1,4 +1,4 @@
-import prisma from '../config/database.js';
+import prisma from '../../lib/prisma';
 import { University, UniversityProgram, Prisma } from '@prisma/client';
 
 export type UniversityWithPrograms = University & {

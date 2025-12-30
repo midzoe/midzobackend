@@ -1,2 +1,25 @@
 node_modules
 .env
+.env.local
+.env.*.local
+
+# Next.js
+.next
+out
+*.log
+dist
+
+# OS
+.DS_Store
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Prisma
+prisma/*.db
+
+# Testing
+coverage
