@@ -23,18 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     const response = NextResponse.json(
-      {
-        success: true,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          phone: user.phone,
-          createdAt: user.createdAt,
-        },
-      },
+      { success: true, user },
       { status: 200 }
     );
 
@@ -78,18 +67,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const response = NextResponse.json(
-      {
-        success: true,
-        user: {
-          id: updatedUser.id,
-          username: updatedUser.username,
-          email: updatedUser.email,
-          firstName: updatedUser.firstName,
-          lastName: updatedUser.lastName,
-          phone: updatedUser.phone,
-          updatedAt: updatedUser.updatedAt,
-        },
-      },
+      { success: true, user: updatedUser },
       { status: 200 }
     );
 

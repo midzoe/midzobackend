@@ -7,9 +7,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { username, password } = body;
 
-    if (!username || !password) {
+    if (!username) {
       return NextResponse.json(
-        { error: "Username and password are required" },
+        { success: false, error: "username is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!password) {
+      return NextResponse.json(
+        { success: false, error: "password is required" },
         { status: 400 }
       );
     }
@@ -18,14 +25,21 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: "Invalid credentials" },
+        { success: false, error: "invalid credentials" },
         { status: 401 }
+      );
+    }
+
+    if (!user.emailVerified) {
+      return NextResponse.json(
+        { success: false, error: "email not verified" },
+        { status: 403 }
       );
     }
 
     const token = generateToken(user.id);
 
-    const response = NextResponse.json(
+    return NextResponse.json(
       {
         success: true,
         token,
@@ -33,19 +47,17 @@ export async function POST(request: NextRequest) {
           id: user.id,
           username: user.username,
           email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          phone: user.phone,
         },
       },
       { status: 200 }
     );
-
-    response.headers.set("Access-Control-Allow-Origin", "*");
-    return response;
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { success: false, error: "internal server error" },
       { status: 500 }
     );
   }

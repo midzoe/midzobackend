@@ -1,38 +1,64 @@
 import { NextRequest, NextResponse } from "next/server";
 import { UserModel } from "@/src/models/User";
-import { generateToken } from "@/lib/auth";
+import { sendVerificationEmail } from "@/lib/email";
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { username, email, password, first_name, last_name, phone } = body;
 
-    if (!username || !email || !password) {
+    if (!email) {
       return NextResponse.json(
-        { error: "Username, email, and password are required" },
+        { success: false, error: "email is required" },
         { status: 400 }
       );
     }
 
-    // Check if user already exists
-    const existingUser = await UserModel.findByUsername(username);
-    if (existingUser) {
+    if (!password) {
       return NextResponse.json(
-        { error: "Username already exists" },
-        { status: 409 }
+        { success: false, error: "password is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidEmail(email)) {
+      return NextResponse.json(
+        { success: false, error: "invalid email format" },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { success: false, error: "password too short" },
+        { status: 400 }
       );
     }
 
     const existingEmail = await UserModel.findByEmail(email);
     if (existingEmail) {
       return NextResponse.json(
-        { error: "Email already exists" },
-        { status: 409 }
+        { success: false, error: "email already exists" },
+        { status: 400 }
       );
     }
 
-    const newUser = await UserModel.create({
-      username,
+    const finalUsername = username || email.split("@")[0].replace(/[^a-z0-9_]/gi, "_");
+
+    const existingUsername = await UserModel.findByUsername(finalUsername);
+    if (existingUsername) {
+      return NextResponse.json(
+        { success: false, error: "username already exists" },
+        { status: 400 }
+      );
+    }
+
+    await UserModel.create({
+      username: finalUsername,
       email,
       password,
       firstName: first_name,
@@ -40,29 +66,19 @@ export async function POST(request: NextRequest) {
       phone,
     });
 
-    const token = generateToken(newUser.id);
+    const code = await UserModel.createVerificationCode(email);
 
-    const response = NextResponse.json(
-      {
-        success: true,
-        token,
-        user: {
-          id: newUser.id,
-          username: newUser.username,
-          email: newUser.email,
-          firstName: newUser.firstName,
-          lastName: newUser.lastName,
-        },
-      },
-      { status: 201 }
-    );
+    try {
+      await sendVerificationEmail(email, code);
+    } catch (emailError) {
+      console.error("Failed to send verification email:", emailError);
+    }
 
-    response.headers.set("Access-Control-Allow-Origin", "*");
-    return response;
+    return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
     console.error("Registration error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { success: false, error: "internal server error" },
       { status: 500 }
     );
   }

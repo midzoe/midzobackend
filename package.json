@@ -8,23 +8,27 @@
     "start": "next start",
     "lint": "next lint",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx src/scripts/seed-european-universities.ts",
+    "db:seed": "tsx src/scripts/seed-universities.ts",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",
+    "bcryptjs": "^3.0.3",
     "dotenv": "^16.3.1",
     "joi": "^17.11.0",
     "jsonwebtoken": "^9.0.2",
     "next": "^15.0.0",
+    "nodemailer": "^8.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.10.5",
+    "@types/nodemailer": "^7.0.11",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "prisma": "^5.7.1",
