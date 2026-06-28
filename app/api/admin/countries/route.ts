@@ -3,6 +3,29 @@ import { getAuthWithRole, isAdmin } from "@/lib/auth";
 import { corsJson, corsOptions } from "@/lib/cors";
 import prisma from "@/lib/prisma";
 
+export async function GET(request: NextRequest) {
+  try {
+    const auth = await getAuthWithRole(request);
+    if (!auth) return corsJson({ error: "Unauthorized" }, { status: 401 });
+    if (!isAdmin(auth.role)) return corsJson({ error: "Forbidden" }, { status: 403 });
+
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "50")));
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      prisma.country.findMany({ skip, take: limit, orderBy: { name: "asc" } }),
+      prisma.country.count(),
+    ]);
+
+    return corsJson({ success: true, data: items, total, page, pages: Math.ceil(total / limit) });
+  } catch (error) {
+    console.error("Admin list countries error:", error);
+    return corsJson({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const auth = await getAuthWithRole(request);
@@ -55,5 +78,5 @@ export async function POST(request: NextRequest) {
 }
 
 export async function OPTIONS() {
-  return corsOptions("POST, OPTIONS");
+  return corsOptions("GET, POST, OPTIONS");
 }

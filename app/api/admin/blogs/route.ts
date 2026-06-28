@@ -3,6 +3,24 @@ import { getAuthWithRole, isAdmin } from "@/lib/auth";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { BlogModel } from "@/src/models/Blog";
 
+export async function GET(request: NextRequest) {
+  try {
+    const auth = await getAuthWithRole(request);
+    if (!auth) return corsJson({ error: "Unauthorized" }, { status: 401 });
+    if (!isAdmin(auth.role)) return corsJson({ error: "Forbidden" }, { status: 403 });
+
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "20")));
+
+    const result = await BlogModel.findAll(page, limit);
+    return corsJson({ success: true, data: result.items, total: result.total, page: result.page, pages: result.pages });
+  } catch (error) {
+    console.error("Admin list blogs error:", error);
+    return corsJson({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const auth = await getAuthWithRole(request);
@@ -35,5 +53,5 @@ export async function POST(request: NextRequest) {
 }
 
 export async function OPTIONS() {
-  return corsOptions("POST, OPTIONS");
+  return corsOptions("GET, POST, OPTIONS");
 }

@@ -58,6 +58,29 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const auth = await getAuthWithRole(request);
+    if (!auth) return corsJson({ error: "Unauthorized" }, { status: 401 });
+    if (!isAdmin(auth.role)) return corsJson({ error: "Forbidden" }, { status: 403 });
+
+    const { id } = await params;
+    const countryId = parseInt(id);
+    if (isNaN(countryId)) return corsJson({ error: "Invalid id" }, { status: 400 });
+
+    try {
+      await prisma.country.delete({ where: { id: countryId } });
+      return corsJson({ success: true });
+    } catch (error: any) {
+      if (error.code === "P2025") return corsJson({ error: "Country not found" }, { status: 404 });
+      throw error;
+    }
+  } catch (error) {
+    console.error("Delete country error:", error);
+    return corsJson({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function OPTIONS() {
-  return corsOptions("PUT, OPTIONS");
+  return corsOptions("PUT, DELETE, OPTIONS");
 }
