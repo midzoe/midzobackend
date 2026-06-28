@@ -11,24 +11,45 @@ datasource db {
 }
 
 model User {
-  id                     Int       @id @default(autoincrement())
-  username               String    @unique
-  email                  String    @unique
-  passwordHash           String    @map("password_hash")
-  firstName              String?   @map("first_name")
-  lastName               String?   @map("last_name")
+  id                     Int            @id @default(autoincrement())
+  username               String         @unique
+  email                  String         @unique
+  passwordHash           String         @map("password_hash")
+  firstName              String?        @map("first_name")
+  lastName               String?        @map("last_name")
   phone                  String?
-  emailVerified          Boolean   @default(false) @map("email_verified")
-  verificationCode       String?   @map("verification_code")
-  verificationCodeExpiry DateTime? @map("verification_code_expiry")
-  verificationCodeSentAt DateTime? @map("verification_code_sent_at")
-  createdAt              DateTime  @default(now()) @map("created_at")
-  updatedAt              DateTime  @updatedAt @map("updated_at")
+  role                   String         @default("user") // "user" | "admin" | "superadmin"
+  nationality            String?
+  countryOfResidence     String?        @map("country_of_residence")
+  isPremium              Boolean        @default(false) @map("is_premium")
+  premiumSince           DateTime?      @map("premium_since")
+  newsletterStudy        Boolean        @default(false) @map("newsletter_study")
+  newsletterTourism      Boolean        @default(false) @map("newsletter_tourism")
+  emailVerified          Boolean        @default(false) @map("email_verified")
+  verificationCode       String?        @map("verification_code")
+  verificationCodeExpiry DateTime?      @map("verification_code_expiry")
+  verificationCodeSentAt DateTime?      @map("verification_code_sent_at")
+  createdAt              DateTime       @default(now()) @map("created_at")
+  updatedAt              DateTime       @updatedAt @map("updated_at")
 
   // Relations
-  bookings UserBooking[]
+  bookings      UserBooking[]
+  languages     UserLanguage[]
+  notifications Notification[]
 
   @@map("users")
+}
+
+model UserLanguage {
+  id       Int    @id @default(autoincrement())
+  userId   Int    @map("user_id")
+  language String
+  level    String // "A1"|"A2"|"B1"|"B2"|"C1"|"C2"
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, language])
+  @@map("user_languages")
 }
 
 model Category {
@@ -61,16 +82,20 @@ model Service {
 }
 
 model Country {
-  id            Int      @id @default(autoincrement())
-  name          String   @unique
-  code          String?  @unique
-  heroImage     String?  @map("hero_image")
-  motto         String?
-  history       String?
-  culturalImage String?  @map("cultural_image")
-  modernLife    String?  @map("modern_life")
-  modernImage   String?  @map("modern_image")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id                Int      @id @default(autoincrement())
+  name              String   @unique
+  code              String?  @unique
+  heroImage         String?  @map("hero_image")
+  motto             String?
+  history           String?
+  culturalImage     String?  @map("cultural_image")
+  modernLife        String?  @map("modern_life")
+  modernImage       String?  @map("modern_image")
+  studyAvailable    Boolean  @default(false) @map("study_available")
+  tourismAvailable  Boolean  @default(false) @map("tourism_available")
+  visaInfoAvailable Boolean  @default(false) @map("visa_info_available")
+  isValidated       Boolean  @default(false) @map("is_validated")
+  createdAt         DateTime @default(now()) @map("created_at")
 
   // Relations
   quickFacts CountryQuickFact[]
@@ -149,16 +174,80 @@ model CountryTrend {
 }
 
 model News {
-  id          Int      @id @default(autoincrement())
-  title       String
-  content     String?
-  image       String?
-  category    String?
-  author      String?
-  publishedAt DateTime @default(now()) @map("published_at")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id           Int      @id @default(autoincrement())
+  title        String
+  body         String?
+  category     String?
+  imageUrl     String?  @map("image_url")
+  publishedAt  DateTime @default(now()) @map("published_at")
+  translations Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("news")
+}
+
+model Blog {
+  id           Int      @id @default(autoincrement())
+  title        String
+  body         String?
+  category     String?
+  imageUrl     String?  @map("image_url")
+  publishedAt  DateTime @default(now()) @map("published_at")
+  translations Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("blog")
+}
+
+model Visa {
+  id                 Int      @id @default(autoincrement())
+  originCountry      String   @map("origin_country")
+  destinationCountry String   @map("destination_country")
+  visaRequired       Boolean  @default(true) @map("visa_required")
+  visaType           String?  @map("visa_type")
+  processingTime     String?  @map("processing_time")
+  cost               Float?
+  documentsRequired  Json?    @map("documents_required")
+  notes              String?
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@unique([originCountry, destinationCountry])
+  @@map("visas")
+}
+
+model Accommodation {
+  id            Int      @id @default(autoincrement())
+  name          String
+  country       String
+  city          String
+  type          String   // "studio"|"shared"|"residence"|"homestay"
+  pricePerMonth Float    @map("price_per_month")
+  currency      String   @default("EUR")
+  contact       String?
+  description   String?
+  images        Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("accommodations")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  type      String   // "visa_alert"|"newsletter"|"trip_reminder"
+  title     String
+  message   String
+  isRead    Boolean  @default(false) @map("is_read")
+  data      Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
 }
 
 enum BookingStatus {
@@ -187,14 +276,14 @@ model UserBooking {
 }
 
 model University {
-  id              Int      @id @default(autoincrement())
-  name            String   @unique
-  city            String
-  website         String?
-  applicationUrl  String?  @map("application_url")
-  specialty       String?
-  country         String   @default("Germany")
-  createdAt       DateTime @default(now()) @map("created_at")
+  id             Int      @id @default(autoincrement())
+  name           String   @unique
+  city           String
+  website        String?
+  applicationUrl String?  @map("application_url")
+  specialty      String?
+  country        String   @default("Germany")
+  createdAt      DateTime @default(now()) @map("created_at")
 
   // Relations
   programs UniversityProgram[]

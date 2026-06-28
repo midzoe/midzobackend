@@ -1,94 +1,62 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { authenticateRequest } from "@/lib/auth";
+import { corsJson, corsOptions } from "@/lib/cors";
 import { UserModel } from "@/src/models/User";
 
 export async function GET(request: NextRequest) {
   try {
     const auth = authenticateRequest(request);
-
-    if (!auth) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+    if (!auth) return corsJson({ error: "Unauthorized" }, { status: 401 });
 
     const user = await UserModel.findById(parseInt(auth.userId));
+    if (!user) return corsJson({ error: "User not found" }, { status: 404 });
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
-    }
-
-    const response = NextResponse.json(
-      { success: true, user },
-      { status: 200 }
-    );
-
-    response.headers.set("Access-Control-Allow-Origin", "*");
-    return response;
+    return corsJson({ success: true, user });
   } catch (error) {
     console.error("Profile error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return corsJson({ error: "Internal server error" }, { status: 500 });
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
     const auth = authenticateRequest(request);
-
-    if (!auth) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+    if (!auth) return corsJson({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
-    const { first_name, last_name, email, phone } = body;
+    const {
+      first_name,
+      last_name,
+      email,
+      phone,
+      nationality,
+      country_of_residence,
+      languages,
+      newsletter_study,
+      newsletter_tourism,
+    } = body;
 
     const updatedUser = await UserModel.update(parseInt(auth.userId), {
       firstName: first_name,
       lastName: last_name,
       email,
       phone,
+      nationality,
+      countryOfResidence: country_of_residence,
+      languages,
+      newsletterStudy: newsletter_study,
+      newsletterTourism: newsletter_tourism,
     });
 
-    if (!updatedUser) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
-    }
+    if (!updatedUser) return corsJson({ error: "User not found" }, { status: 404 });
 
-    const response = NextResponse.json(
-      { success: true, user: updatedUser },
-      { status: 200 }
-    );
-
-    response.headers.set("Access-Control-Allow-Origin", "*");
-    return response;
+    return corsJson({ success: true, user: updatedUser });
   } catch (error) {
     console.error("Profile update error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return corsJson({ error: "Internal server error" }, { status: 500 });
   }
 }
 
 export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, PUT, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    },
-  });
+  return corsOptions("GET, PUT, OPTIONS");
 }
