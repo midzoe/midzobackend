@@ -916,14 +916,16 @@ const usersData = [
     email: 'admin@midzo.com',
     password: 'midzolo', // Will be hashed
     firstName: 'Midzo',
-    lastName: 'Admin'
+    lastName: 'Admin',
+    role: 'admin'
   },
   {
     username: 'demo',
     email: 'demo@midzo.com',
     password: 'demo123',
     firstName: 'Demo',
-    lastName: 'User'
+    lastName: 'User',
+    role: 'user'
   }
 ];
 
@@ -1209,7 +1211,7 @@ async function seedDatabase() {
       const hashedPassword = await bcrypt.hash(user.password, 10);
       await prisma.user.upsert({
         where: { username: user.username },
-        update: { passwordHash: hashedPassword, emailVerified: true },
+        update: { passwordHash: hashedPassword, emailVerified: true, role: user.role },
         create: {
           username: user.username,
           email: user.email,
@@ -1217,6 +1219,7 @@ async function seedDatabase() {
           firstName: user.firstName,
           lastName: user.lastName,
           emailVerified: true,
+          role: user.role,
         }
       });
     }
