@@ -12,33 +12,36 @@ export async function GET(request: NextRequest) {
     const [
       totalUsers,
       premiumUsers,
-      totalCountries,
       totalNews,
-      totalBlog,
+      totalBlogs,
+      totalStudyCountries,
+      totalTourismCountries,
       totalVisas,
       totalAccommodations,
-      totalNotifications,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { isPremium: true } }),
-      prisma.country.count(),
       prisma.news.count(),
       prisma.blog.count(),
+      prisma.studyCountry.count(),
+      prisma.tourismCountry.count(),
       prisma.visa.count(),
       prisma.accommodation.count(),
-      prisma.notification.count(),
     ]);
 
     return corsJson({
       success: true,
-      stats: {
-        users: { total: totalUsers, premium: premiumUsers },
-        countries: totalCountries,
-        news: totalNews,
-        blog: totalBlog,
-        visas: totalVisas,
-        accommodations: totalAccommodations,
-        notifications: totalNotifications,
+      data: {
+        total_users: totalUsers,
+        premium_users: premiumUsers,
+        total_news: totalNews,
+        total_blogs: totalBlogs,
+        total_study_countries: totalStudyCountries,
+        total_tourism_countries: totalTourismCountries,
+        total_visas: totalVisas,
+        total_accommodations: totalAccommodations,
+        // aliases for frontend compatibility
+        total_countries: totalStudyCountries + totalTourismCountries,
       },
     });
   } catch (error) {

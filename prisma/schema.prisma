@@ -174,31 +174,92 @@ model CountryTrend {
 }
 
 model News {
-  id           Int      @id @default(autoincrement())
-  title        String
-  body         String?
-  category     String?
-  imageUrl     String?  @map("image_url")
-  publishedAt  DateTime @default(now()) @map("published_at")
-  translations Json?
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id            Int      @id @default(autoincrement())
+  title         String
+  titleFr       String?  @map("title_fr")
+  body          String?
+  description   String?
+  descriptionFr String?  @map("description_fr")
+  category      String?
+  imageUrl      String?  @map("image_url")
+  link          String?
+  publishedAt   DateTime @default(now()) @map("published_at")
+  isPublished   Boolean  @default(false) @map("is_published")
+  translations  Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@map("news")
 }
 
 model Blog {
-  id           Int      @id @default(autoincrement())
-  title        String
-  body         String?
-  category     String?
-  imageUrl     String?  @map("image_url")
-  publishedAt  DateTime @default(now()) @map("published_at")
+  id          Int      @id @default(autoincrement())
+  title       String
+  slug        String?  @unique
+  body        String?
+  excerpt     String?
+  category    String?
+  author      String?
+  imageUrl    String?  @map("image_url")
+  publishedAt DateTime @default(now()) @map("published_at")
+  isPublished Boolean  @default(false) @map("is_published")
   translations Json?
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("blog")
+}
+
+model StudyCountry {
+  id                    Int      @id @default(autoincrement())
+  name                  String   @unique
+  nameFr                String?  @map("name_fr")
+  region                String?
+  capital               String?
+  flag                  String?
+  image                 String?
+  description           String?
+  languageInstruction   String[] @map("language_instruction")
+  tuitionRange          String?  @map("tuition_range")
+  livingCost            String?  @map("living_cost")
+  visaDifficulty        String?  @map("visa_difficulty")
+  scholarshipAvailable  Boolean  @default(false) @map("scholarship_available")
+  popularScholarships   String[] @map("popular_scholarships")
+  popularPrograms       String[] @map("popular_programs")
+  admissionRequirements String[] @map("admission_requirements")
+  topUniversities       String[] @map("top_universities")
+  processingTimeVisa    String?  @map("processing_time_visa")
+  studyAvailable        Boolean  @default(true) @map("study_available")
+  isValidated           Boolean  @default(false) @map("is_validated")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("study_countries")
+}
+
+model TourismCountry {
+  id                 Int      @id @default(autoincrement())
+  name               String   @unique
+  nameFr             String?  @map("name_fr")
+  region             String?
+  capital            String?
+  flag               String?
+  image              String?
+  description        String?
+  currency           String?
+  language           String?
+  bestTime           String?  @map("best_time")
+  avgBudgetPerDay    String?  @map("avg_budget_per_day")
+  topAttractions     String[] @map("top_attractions")
+  visaForAfricans    String?  @map("visa_for_africans")
+  processingTimeVisa String?  @map("processing_time_visa")
+  directFlightsFrom  String[] @map("direct_flights_from")
+  tourismAvailable   Boolean  @default(true) @map("tourism_available")
+  isValidated        Boolean  @default(false) @map("is_validated")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("tourism_countries")
 }
 
 model Visa {
