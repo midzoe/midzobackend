@@ -49,5 +49,5 @@ export async function POST(request: NextRequest) {
 }
 
 export async function OPTIONS() {
-  return corsOptions("POST, OPTIONS");
+  return corsOptions("GET, POST, OPTIONS");
 }
