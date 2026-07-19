@@ -8,7 +8,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     const countryId = parseInt(id);
     if (isNaN(countryId)) return corsJson({ error: "Invalid id" }, { status: 400 });
 
-    const data = await TourismCountryModel.findById(countryId);
+    const data = await TourismCountryModel.findByIdPublic(countryId);
     if (!data) return corsJson({ error: "Country not found" }, { status: 404 });
 
     return corsJson({ success: true, data });

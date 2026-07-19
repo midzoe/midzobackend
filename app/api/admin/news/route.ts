@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "20")));
 
-    const result = await NewsModel.findAll(page, limit, false);
+    const result = await NewsModel.findAll(page, limit);
     return corsJson({ success: true, data: result.items, total: result.total, page: result.page, pages: result.pages });
   } catch (error) {
     console.error("Admin list news error:", error);

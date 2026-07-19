@@ -1,59 +1,185 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { countryDetailsSeed, CountryDetailSeed } from './data/country-details';
+import { newsSeed } from './data/news-catalog';
+import { studyCountriesSeed, tourismCountriesSeed } from './data/country-availability';
+import { embassiesSeed } from './data/embassies';
 
 const prisma = new PrismaClient();
 
-// Sample data based on the frontend structure
+// --- Fiches pays : traductions et nettoyage (story 1.6) ---
+// Le front lit les traductions par index (tr.traditions[i]) : chaque ligne porte donc sa
+// propre traduction, et la colonne `order` garantit que l'index reste aligné.
+
+const LANGS = ['fr', 'de'] as const;
+type ItemKey = 'quickFacts' | 'traditions' | 'cuisine' | 'places';
+
+function buildCountryTranslations(details: CountryDetailSeed): Prisma.InputJsonValue | undefined {
+  const out: Record<string, Prisma.InputJsonValue> = {};
+  for (const lang of LANGS) {
+    const tr = details[lang];
+    if (!tr) continue;
+    out[lang] = { motto: tr.motto, history: tr.history, modernLife: tr.modernLife };
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function buildItemTranslations(
+  details: CountryDetailSeed,
+  key: ItemKey,
+  index: number,
+  fields: string[]
+): Prisma.InputJsonValue | undefined {
+  const out: Record<string, Prisma.InputJsonValue> = {};
+  for (const lang of LANGS) {
+    const item = (details[lang] as any)?.[key]?.[index];
+    if (!item) continue;
+    const picked: Record<string, Prisma.InputJsonValue> = {};
+    for (const field of fields) {
+      if (item[field] !== undefined) picked[field] = item[field];
+    }
+    if (Object.keys(picked).length > 0) out[lang] = picked;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function buildTrendTranslations(details: CountryDetailSeed, index: number): Prisma.InputJsonValue | undefined {
+  const out: Record<string, Prisma.InputJsonValue> = {};
+  for (const lang of LANGS) {
+    const trend = details[lang]?.trends?.[index];
+    if (typeof trend === 'string') out[lang] = { trendText: trend };
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/** Supprime les lignes d'une sous-table qui ne sont plus au catalogue (seed idempotent). */
+async function purgeStale(
+  model: 'countryQuickFact' | 'countryTradition' | 'countryCuisine' | 'countryPlace',
+  countryId: number,
+  field: 'title' | 'name',
+  keep: string[]
+) {
+  const result = await (prisma as any)[model].deleteMany({
+    where: { countryId, [field]: { notIn: keep } }
+  });
+  if (result.count > 0) {
+    console.log(`  🧹 ${model}: ${result.count} entrée(s) hors catalogue supprimée(s)`);
+  }
+}
+
+// Catalogue public : libellés/descriptions/ordre repris à l'identique du front
+// (ex-midzoweb/src/data/categories.ts) car `name` et `description` sont affichés
+// tels quels par TripForm et TripWizard, et `order` pilote l'ordre d'affichage.
+// professional/business restent en base (isPublic=false) mais ne sont plus exposés.
 const categoriesData = [
   {
     id: 'study',
-    name: 'Study',
-    description: 'Educational opportunities worldwide',
-    icon: '🎓'
+    name: 'Study & Training',
+    description: 'Educational opportunities and professional training worldwide',
+    icon: '🎓',
+    isPublic: true,
+    order: 1
+  },
+  {
+    id: 'tourism',
+    name: 'Tourism',
+    description: 'Curated travel experiences and events worldwide',
+    icon: '🌍',
+    isPublic: true,
+    order: 2
+  },
+  {
+    id: 'orientation',
+    name: 'Orientation',
+    description: 'Personalized guidance for your international projects',
+    icon: '🧭',
+    isPublic: true,
+    order: 3
   },
   {
     id: 'professional',
     name: 'Professional Training & Job',
     description: 'Career development and job opportunities',
-    icon: '💼'
-  },
-  {
-    id: 'tourism',
-    name: 'Tourism',
-    description: 'Travel and exploration experiences',
-    icon: '🌍'
+    icon: '💼',
+    isPublic: false,
+    order: 90
   },
   {
     id: 'business',
     name: 'Business',
     description: 'Business travel and networking',
-    icon: '🤝'
+    icon: '🤝',
+    isPublic: false,
+    order: 91
   }
 ];
 
+// Taxonomie catégorie -> sous-catégories (migrée de midzoweb/src/data/categories.ts).
+// Chaque service listé côté front devient une sous-catégorie ; `order` fixe l'affichage.
+// Chaque catégorie active reçoit une sous-catégorie sentinelle « Autre » (isOther=true).
+const subcategoriesData = [
+  // Study
+  { categoryId: 'study', name: 'University finder', order: 1, isOther: false },
+  { categoryId: 'study', name: 'Document Legalization & Recognition', order: 2, isOther: false },
+  { categoryId: 'study', name: 'Student accommodation', order: 3, isOther: false },
+  { categoryId: 'study', name: 'Student visa assistance', order: 4, isOther: false },
+  { categoryId: 'study', name: 'Bank account', order: 5, isOther: false },
+  { categoryId: 'study', name: 'Insurance', order: 6, isOther: false },
+  { categoryId: 'study', name: 'Language center', order: 7, isOther: false },
+  { categoryId: 'study', name: 'Flight booking', order: 8, isOther: false },
+  { categoryId: 'study', name: 'Autre', order: 999, isOther: true },
+  // Tourism
+  { categoryId: 'tourism', name: 'Events & Spectacles', order: 1, isOther: false },
+  { categoryId: 'tourism', name: 'Safari & Africa', order: 2, isOther: false },
+  { categoryId: 'tourism', name: 'Sports Tourism', order: 3, isOther: false },
+  { categoryId: 'tourism', name: 'Tourist Visa', order: 4, isOther: false },
+  { categoryId: 'tourism', name: 'Flights & Stays', order: 5, isOther: false },
+  { categoryId: 'tourism', name: 'Autre', order: 999, isOther: true },
+  // Orientation
+  { categoryId: 'orientation', name: 'School Orientation', order: 1, isOther: false },
+  { categoryId: 'orientation', name: 'Career Orientation', order: 2, isOther: false },
+  { categoryId: 'orientation', name: 'Training Orientation', order: 3, isOther: false },
+  { categoryId: 'orientation', name: 'Autre', order: 999, isOther: true }
+];
+
+// Catalogue de services — source de vérité, migré de ex-midzoweb/src/data/{categories,services}.ts.
+//   `name`        = clé de catalogue (identique à Subcategory.name de la story 1.1 et aux clés
+//                   comparées en dur par TripWizard) — NE PAS renommer sans migrer le front.
+//   `displayName` = libellé affiché (TripWizard) quand il diffère de la clé.
+//   `order`       = ordre d'affichage ; pilote aussi les étapes du TripWizard.
+//   `deliveryMode` conservé de la story 1.2 pour les services préexistants.
 const servicesData = [
   // Study services
-  { name: 'University Finder', description: 'Find the perfect university match based on your academic interests, budget, and location preferences.', image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1', learnMoreLink: '/services/university-finder', categoryId: 'study' },
-  { name: 'Document Legalization & Recognition', description: 'Complete support for document legalization and recognition.', image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85', learnMoreLink: '/services/document-legalization', categoryId: 'study' },
-  { name: 'Student Accommodation', description: 'Find safe and comfortable housing options near your university.', image: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5', learnMoreLink: '/services/student-accommodation', categoryId: 'study' },
-  { name: 'Student Visa Assistance', description: 'Complete support throughout your student visa application process.', image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173', learnMoreLink: '/services/student-visa', categoryId: 'study' },
-  { name: 'Bank Account Setup', description: 'Assistance in opening a student bank account in your destination country.', image: 'https://images.unsplash.com/photo-1601597111158-2fceff292cdc', learnMoreLink: '/services/bank-account', categoryId: 'study' },
-  { name: 'Language Center', description: 'Access to quality language courses and certification programs.', image: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8', learnMoreLink: '/services/language-center', categoryId: 'study' },
-  
-  // Professional services
-  { name: 'Professional Training Finder', description: 'Access curated professional development courses and certification programs.', image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3', learnMoreLink: '/services/training-finder', categoryId: 'professional' },
-  { name: 'Jobs Finder', description: 'Connect with international employers and find career opportunities.', image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40', learnMoreLink: '/services/jobs-finder', categoryId: 'professional' },
-  { name: 'Work Visa Assistance', description: 'Expert guidance through work permit and visa applications.', image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c', learnMoreLink: '/services/work-visa', categoryId: 'professional' },
-  
+  { name: 'University finder', displayName: 'University Finder', description: 'Find the perfect university match based on your academic interests, budget, and location preferences.', image: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', learnMoreLink: '/services/university-finder', translationKey: 'study.universityFinder', deliveryMode: 'online', order: 1, categoryId: 'study' },
+  { name: 'Document Legalization & Recognition', displayName: 'Document Legalization & Recognition', description: 'Complete support for document legalization and recognition of your qualifications internationally.', image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', learnMoreLink: '/services/document-legalization', translationKey: 'study.documentLegalization', deliveryMode: 'hybrid', order: 2, categoryId: 'study' },
+  { name: 'Student accommodation', displayName: 'Student Accommodation', description: 'Find safe and comfortable housing options near your university, from dormitories to shared apartments.', image: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', learnMoreLink: '/services/student-accommodation', translationKey: 'study.studentAccommodation', deliveryMode: 'physical', order: 3, categoryId: 'study' },
+  { name: 'Student visa assistance', displayName: 'Student Visa Assistance', description: 'Complete support throughout your student visa application process, from documentation to interview preparation.', image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', learnMoreLink: '/services/student-visa', translationKey: 'study.studentVisa', deliveryMode: 'hybrid', order: 4, categoryId: 'study' },
+  { name: 'Bank account', displayName: 'Bank Account Setup', description: 'Assistance in opening a student bank account in your destination country.', image: 'https://images.unsplash.com/photo-1601597111158-2fceff292cdc?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', learnMoreLink: '/services/bank-account', translationKey: 'study.bankAccount', deliveryMode: 'hybrid', order: 5, categoryId: 'study' },
+  { name: 'Insurance', displayName: 'Insurance', description: 'Comprehensive insurance coverage tailored for students studying abroad.', image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', learnMoreLink: '/insurance', translationKey: 'study.insurance', deliveryMode: 'online', order: 6, categoryId: 'study' },
+  { name: 'Language center', displayName: 'Language Center', description: 'Quality language courses and certification programs to enhance your language skills for academic success.', image: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', learnMoreLink: '/services/language-center', translationKey: 'study.languageCenter', deliveryMode: 'physical', order: 7, categoryId: 'study' },
+  { name: 'Flight booking', displayName: 'Flight Booking', description: 'Book your flights with special student rates and flexible options for international travel.', image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', learnMoreLink: '/flights', translationKey: 'study.flightBooking', deliveryMode: 'online', order: 8, categoryId: 'study' },
+
   // Tourism services
-  { name: 'Accommodation Finder', description: 'Find and book the perfect accommodation for your travel needs.', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945', learnMoreLink: '/services/accommodation', categoryId: 'tourism' },
-  { name: 'Tourist Visa Assistance', description: 'Streamlined tourist visa application support for hassle-free travel.', image: 'https://images.unsplash.com/photo-1452421822248-d4c2b47f0c81', learnMoreLink: '/services/tourist-visa', categoryId: 'tourism' },
-  { name: 'Tourist Sites Finder', description: 'Discover popular attractions and must-visit locations.', image: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b', learnMoreLink: '/services/tourist-sites', categoryId: 'tourism' },
-  
-  // Business services
-  { name: 'Business Networking Events', description: 'Participate in curated business events to expand your network.', image: 'https://images.unsplash.com/photo-1511578314322-379afb476865', learnMoreLink: '/services/networking-events', categoryId: 'business' },
-  { name: 'Corporate Accommodation', description: 'Premium accommodation solutions for business travelers.', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945', learnMoreLink: '/services/corporate-accommodation', categoryId: 'business' },
-  { name: 'Business Visa Assistance', description: 'Expert support for business visa applications.', image: 'https://images.unsplash.com/photo-1434626881859-194d67b2b86f', learnMoreLink: '/services/business-visa', categoryId: 'business' }
+  { name: 'Events & Spectacles', displayName: 'Events & Spectacles', description: 'Live the biggest global events: World Cup 2026, AFCON, Olympic Games. Complete packages: transport, accommodation, tickets.', image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', learnMoreLink: '/services/tourism-events', translationKey: 'tourism.events', deliveryMode: 'physical', order: 1, categoryId: 'tourism' },
+  { name: 'Safari & Africa', displayName: 'Safari & Africa Discovery', description: 'Unique experiences in the heart of Africa. Lesotho, Botswana, and destinations we master — curated for an authentic experience.', image: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', learnMoreLink: '/services/tourism-safari', translationKey: 'tourism.safari', deliveryMode: 'physical', order: 2, categoryId: 'tourism' },
+  { name: 'Sports Tourism', displayName: 'Sports Tourism', description: 'Travel built around your passion for sport. Marathons, tournaments, sporting events — we organize your entire trip.', image: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', learnMoreLink: '/services/tourism-sports', translationKey: 'tourism.sports', deliveryMode: 'physical', order: 3, categoryId: 'tourism' },
+  { name: 'Tourist Visa', displayName: 'Tourist Visa Assistance', description: 'Streamlined tourist visa application support for hassle-free international travel.', image: 'https://images.unsplash.com/photo-1452421822248-d4c2b47f0c81?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', learnMoreLink: '/services/tourist-visa', translationKey: 'tourism.touristVisa', deliveryMode: 'hybrid', order: 4, categoryId: 'tourism' },
+  { name: 'Flights & Stays', displayName: 'Flights & Stays — Partner Platforms', description: 'For standard flight + hotel packages, we redirect you to our trusted partner platforms: Booking.com, Expedia, Skyscanner.', image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', learnMoreLink: '/services/tourism-partners', translationKey: 'tourism.flightsStays', deliveryMode: 'online', isExternal: true, order: 5, categoryId: 'tourism' },
+
+  // Orientation services
+  { name: 'School Orientation', displayName: 'School Orientation', description: 'Personalized guidance to choose the right school, country, and program for your education abroad.', image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', learnMoreLink: '/services/orientation-study', translationKey: 'orientation.school', deliveryMode: 'online', order: 1, categoryId: 'orientation' },
+  { name: 'Career Orientation', displayName: 'Career Orientation', description: 'Define your professional path with our career advisors. International job market insights, skills assessment and career planning.', image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', learnMoreLink: '/services/orientation-career', translationKey: 'orientation.career', deliveryMode: 'online', order: 2, categoryId: 'orientation' },
+  { name: 'Training Orientation', displayName: 'Training Orientation', description: 'Find the right professional training program, certification, or vocational course abroad matching your career goals.', image: 'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', learnMoreLink: '/services/orientation-training', translationKey: 'orientation.training', deliveryMode: 'online', order: 3, categoryId: 'orientation' },
+
+  // Professional services (catégorie non publique — conservée pour l'admin)
+  { name: 'Professional Training Finder', displayName: 'Professional Training Finder', description: 'Access curated professional development courses and certification programs.', image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3', learnMoreLink: '/services/training-finder', translationKey: 'professional.trainingFinder', deliveryMode: 'online', order: 1, categoryId: 'professional' },
+  { name: 'Jobs Finder', displayName: 'Jobs Finder', description: 'Connect with international employers and find career opportunities.', image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40', learnMoreLink: '/services/jobs-finder', translationKey: 'professional.jobsFinder', deliveryMode: 'online', order: 2, categoryId: 'professional' },
+  { name: 'Work Visa Assistance', displayName: 'Work Visa Assistance', description: 'Expert guidance through work permit and visa applications.', image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c', learnMoreLink: '/services/work-visa', translationKey: 'professional.workVisa', deliveryMode: 'hybrid', order: 3, categoryId: 'professional' },
+
+  // Business services (catégorie non publique — conservée pour l'admin)
+  { name: 'Business Networking Events', displayName: 'Business Networking Events', description: 'Participate in curated business events to expand your network.', image: 'https://images.unsplash.com/photo-1511578314322-379afb476865', learnMoreLink: '/services/networking-events', translationKey: 'business.networkingEvents', deliveryMode: 'physical', order: 1, categoryId: 'business' },
+  { name: 'Corporate Accommodation', displayName: 'Corporate Accommodation', description: 'Premium accommodation solutions for business travelers.', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945', learnMoreLink: '/services/corporate-accommodation', translationKey: 'business.corporateAccommodation', deliveryMode: 'physical', order: 2, categoryId: 'business' },
+  { name: 'Business Visa Assistance', displayName: 'Business Visa Assistance', description: 'Expert support for business visa applications.', image: 'https://images.unsplash.com/photo-1434626881859-194d67b2b86f', learnMoreLink: '/services/business-visa', translationKey: 'business.businessVisa', deliveryMode: 'hybrid', order: 3, categoryId: 'business' }
 ];
 
 const countriesData = [
@@ -929,6 +1055,33 @@ const usersData = [
   }
 ];
 
+// Regroupement pays -> région (migré de midzoweb/src/data/regions.ts).
+// Sert à peupler Country.region ; le front consomme ce groupement via useCountries.
+const COUNTRY_REGION: Record<string, string> = {
+  // Europe
+  Spain: 'Europe', France: 'Europe', Germany: 'Europe', Italy: 'Europe', Portugal: 'Europe',
+  Greece: 'Europe', Sweden: 'Europe', Norway: 'Europe', Finland: 'Europe', Denmark: 'Europe',
+  Iceland: 'Europe', Ireland: 'Europe', 'United Kingdom': 'Europe', Austria: 'Europe',
+  Switzerland: 'Europe', Belgium: 'Europe', Netherlands: 'Europe', Luxembourg: 'Europe',
+  Estonia: 'Europe', Latvia: 'Europe', Lithuania: 'Europe',
+  // Asia
+  China: 'Asia', India: 'Asia', Japan: 'Asia', 'South Korea': 'Asia', Indonesia: 'Asia',
+  Thailand: 'Asia', Vietnam: 'Asia', Malaysia: 'Asia', Philippines: 'Asia', Singapore: 'Asia',
+  Cambodia: 'Asia', Laos: 'Asia', Dubai: 'Asia',
+  // North America
+  'United States': 'North America', Canada: 'North America',
+  // South America
+  Mexico: 'South America', 'Costa Rica': 'South America', Panama: 'South America',
+  Colombia: 'South America', Venezuela: 'South America', Ecuador: 'South America',
+  Peru: 'South America', Bolivia: 'South America', Chile: 'South America',
+  Argentina: 'South America', Brazil: 'South America',
+  // Africa
+  'South Africa': 'Africa', Egypt: 'Africa', Kenya: 'Africa', Morocco: 'Africa', Tunisia: 'Africa',
+  Rwanda: 'Africa', Mauritius: 'Africa', Botswana: 'Africa', Namibia: 'Africa', Ghana: 'Africa',
+  Nigeria: 'Africa', Tanzania: 'Africa', Uganda: 'Africa', Senegal: 'Africa', Ethiopia: 'Africa',
+  'Ivory Coast': 'Africa'
+};
+
 async function seedDatabase() {
   console.log('🌱 Starting database seeding with Prisma...');
   
@@ -941,41 +1094,111 @@ async function seedDatabase() {
     for (const category of categoriesData) {
       await prisma.category.upsert({
         where: { id: category.id },
-        update: {},
+        update: {
+          name: category.name,
+          description: category.description,
+          icon: category.icon,
+          isPublic: category.isPublic,
+          order: category.order
+        },
         create: category
       });
     }
 
-    // Seed services
+    // Seed subcategories (taxonomie catégorie -> sous-catégorie)
+    console.log('Seeding subcategories...');
+    for (const subcategory of subcategoriesData) {
+      await prisma.subcategory.upsert({
+        where: {
+          categoryId_name: {
+            categoryId: subcategory.categoryId,
+            name: subcategory.name
+          }
+        },
+        update: { order: subcategory.order, isOther: subcategory.isOther },
+        create: subcategory
+      });
+    }
+
+    // Seed services — upsert par (categoryId, name) : le même nom peut exister
+    // dans plusieurs catégories (ex. « Insurance »), donc pas de lookup par nom seul.
     console.log('Seeding services...');
     for (const service of servicesData) {
-      const existingService = await prisma.service.findFirst({
-        where: { name: service.name }
+      await prisma.service.upsert({
+        where: {
+          categoryId_name: {
+            categoryId: service.categoryId,
+            name: service.name
+          }
+        },
+        update: service,
+        create: service
       });
-      
-      if (existingService) {
-        await prisma.service.update({
-          where: { id: existingService.id },
-          data: service
-        });
-      } else {
-        await prisma.service.create({
-          data: service
-        });
+    }
+
+    // Purge des services hors catalogue (anciens noms d'avant l'alignement front,
+    // ex. « University Finder » remplacé par la clé « University finder »).
+    // Un service encore référencé par une réservation est conservé et signalé.
+    const catalogueKeys = new Set(servicesData.map((s) => `${s.categoryId}::${s.name}`));
+    const staleServices = (
+      await prisma.service.findMany({
+        include: { _count: { select: { bookings: true } } }
+      })
+    ).filter((s) => !catalogueKeys.has(`${s.categoryId}::${s.name}`));
+
+    for (const stale of staleServices) {
+      if (stale._count.bookings > 0) {
+        console.warn(
+          `⚠️  Service hors catalogue conservé (${stale._count.bookings} réservation(s)) : ${stale.categoryId}/${stale.name}`
+        );
+        continue;
       }
+      await prisma.service.delete({ where: { id: stale.id } });
+      console.log(`🗑️  Service hors catalogue supprimé : ${stale.categoryId}/${stale.name}`);
     }
 
     // Seed countries
     console.log('Seeding countries...');
     const countryMap: { [key: string]: number } = {};
-    
+
+    // Position curatée dans la liste des pays d'études (pilote l'ordre du Hero).
+    const studyOrder = new Map(studyCountriesSeed.map((name, i) => [name, i + 1]));
+    const tourismSet = new Set(tourismCountriesSeed);
+
     for (const countryData of countriesData) {
+      const region = COUNTRY_REGION[countryData.name] ?? null;
+      const details = countryDetailsSeed[countryData.name];
+
+      // Les 12 fiches complètes font autorité sur les textes affichés (parité avec l'ex-front).
+      const detailFields = details
+        ? {
+            heroImage: details.heroImage,
+            motto: details.motto,
+            history: details.history,
+            culturalImage: details.culturalImage,
+            modernLife: details.modernLife,
+            modernImage: details.modernImage,
+            translations: buildCountryTranslations(details)
+          }
+        : {};
+
+      const data = {
+        ...countryData,
+        region,
+        ...detailFields,
+        // Gate de publication : seules les fiches complètes sont servies par /api/countries/{name}.
+        isValidated: Boolean(details),
+        studyAvailable: studyOrder.has(countryData.name),
+        tourismAvailable: tourismSet.has(countryData.name),
+        order: studyOrder.get(countryData.name) ?? 0
+      };
+
       const country = await prisma.country.upsert({
         where: { name: countryData.name },
-        update: countryData,
-        create: countryData
+        update: data,
+        create: data
       });
-      
+
       countryMap[country.name] = country.id;
     }
 
@@ -1078,99 +1301,168 @@ async function seedDatabase() {
       }
     }
 
-    // Seed sample traditions
-    console.log('Seeding country traditions...');
-    const traditions = [
-      {
-        countryId: countryMap['France'],
-        name: 'Bastille Day',
-        description: 'Annual celebration of the French Revolution with parades, fireworks, and festivities.',
-        image: 'https://images.unsplash.com/photo-1534551767192-78b8dd45b51b'
-      },
-      {
-        countryId: countryMap['Italy'],
-        name: 'Carnevale',
-        description: 'Pre-Lenten carnival with elaborate masks and costumes, especially famous in Venice.',
-        image: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7'
-      }
-    ];
+    // Seed des fiches pays complètes (traditions / cuisine / lieux / tendances + traductions).
+    // Seules ces fiches sont publiées (isValidated) : elles doivent être exhaustives et ordonnées.
+    console.log('Seeding country details (12 validated countries)...');
 
-    for (const tradition of traditions) {
-      if (tradition.countryId) {
+    for (const [countryName, details] of Object.entries(countryDetailsSeed)) {
+      const countryId = countryMap[countryName];
+      if (!countryId) {
+        console.warn(`  ⚠️  ${countryName} absent de countriesData — fiche ignorée`);
+        continue;
+      }
+
+      // Quick facts : l'ordre pilote l'affichage des 4 cartes, la traduction est positionnelle.
+      for (const [i, fact] of details.quickFacts.entries()) {
+        const data = {
+          countryId,
+          title: fact.title,
+          value: fact.value,
+          order: i,
+          translations: buildItemTranslations(details, 'quickFacts', i, ['title', 'value'])
+        };
+        await prisma.countryQuickFact.upsert({
+          where: { countryId_title: { countryId, title: fact.title } },
+          update: data,
+          create: data
+        });
+      }
+      await purgeStale('countryQuickFact', countryId, 'title', details.quickFacts.map((f) => f.title));
+
+      for (const [i, tradition] of details.traditions.entries()) {
+        const data = {
+          countryId,
+          name: tradition.name,
+          description: tradition.description,
+          image: tradition.image,
+          order: i,
+          translations: buildItemTranslations(details, 'traditions', i, ['name', 'description'])
+        };
         await prisma.countryTradition.upsert({
-          where: {
-            countryId_name: {
-              countryId: tradition.countryId,
-              name: tradition.name
-            }
-          },
-          update: tradition,
-          create: tradition
+          where: { countryId_name: { countryId, name: tradition.name } },
+          update: data,
+          create: data
         });
       }
-    }
+      await purgeStale('countryTradition', countryId, 'name', details.traditions.map((t) => t.name));
 
-    // Seed sample cuisine
-    console.log('Seeding country cuisine...');
-    const cuisine = [
-      {
-        countryId: countryMap['France'],
-        name: 'Croissants',
-        description: 'Flaky, buttery pastries that are a staple of French breakfast.',
-        image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a'
-      },
-      {
-        countryId: countryMap['Italy'],
-        name: 'Pizza Napoletana',
-        description: 'Traditional Neapolitan pizza with simple, fresh ingredients.',
-        image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002'
-      }
-    ];
-
-    for (const dish of cuisine) {
-      if (dish.countryId) {
+      for (const [i, dish] of details.cuisine.entries()) {
+        const data = {
+          countryId,
+          name: dish.name,
+          description: dish.description,
+          image: dish.image,
+          order: i,
+          translations: buildItemTranslations(details, 'cuisine', i, ['name', 'description'])
+        };
         await prisma.countryCuisine.upsert({
-          where: {
-            countryId_name: {
-              countryId: dish.countryId,
-              name: dish.name
-            }
-          },
-          update: dish,
-          create: dish
+          where: { countryId_name: { countryId, name: dish.name } },
+          update: data,
+          create: data
+        });
+      }
+      await purgeStale('countryCuisine', countryId, 'name', details.cuisine.map((d) => d.name));
+
+      for (const [i, place] of details.places.entries()) {
+        const data = {
+          countryId,
+          name: place.name,
+          description: place.description,
+          image: place.image,
+          order: i,
+          translations: buildItemTranslations(details, 'places', i, ['name', 'description'])
+        };
+        await prisma.countryPlace.upsert({
+          where: { countryId_name: { countryId, name: place.name } },
+          update: data,
+          create: data
+        });
+      }
+      await purgeStale('countryPlace', countryId, 'name', details.places.map((p) => p.name));
+
+      // CountryTrend n'a pas de contrainte unique → remplacement complet, sinon doublons à chaque run.
+      await prisma.countryTrend.deleteMany({ where: { countryId } });
+      await prisma.countryTrend.createMany({
+        data: details.trends.map((trendText, i) => ({
+          countryId,
+          trendText,
+          order: i,
+          translations: buildTrendTranslations(details, i)
+        }))
+      });
+    }
+
+    // Seed de la tarification premium (story 3.1).
+    // 🚨 Montants volontairement à 0 : le PRD ne fixe aucun prix et rien ne doit être inventé.
+    // Les tarifs réels sont saisis par l'admin (PUT /api/admin/pricing-config, PUT /api/admin/packages/{id}).
+    // Les `update` ci-dessous ne touchent JAMAIS aux prix : un rejeu du seed ne doit pas écraser la saisie admin.
+    console.log('Seeding pricing config & packages (montants a 0, saisis par l\'admin)...');
+
+    await prisma.pricingConfig.upsert({
+      where: { id: 1 },
+      update: {}, // création seule — préserve les tarifs déjà saisis
+      create: { id: 1 }
+    });
+
+    // Packages prédéfinis attendus par la recommandation (story 3.3) : mono / duo / full package top.
+    // ⚠️ Un mono PAR catégorie publique est indispensable au moteur de devis (story 3.2) : la base d'un
+    // package personnalisé est la somme des bases mono — une catégorie sans mono serait facturée 0 en silence.
+    const packagesData = [
+      { name: 'Study', description: 'Accompagnement complet pour vos études à l\'international.', isFullPackage: false, order: 1, categories: ['study'] },
+      { name: 'Tourism', description: 'Accompagnement pour vos voyages et séjours touristiques.', isFullPackage: false, order: 2, categories: ['tourism'] },
+      { name: 'Orientation', description: 'Accompagnement pour votre orientation scolaire, professionnelle et formation.', isFullPackage: false, order: 3, categories: ['orientation'] },
+      { name: 'Full Package Top', description: 'Votre dossier complet : études, tourisme et orientation.', isFullPackage: true, order: 4, categories: ['study', 'tourism', 'orientation'] }
+    ];
+
+    for (const pkg of packagesData) {
+      // Seules les catégories réellement seedées sont rattachées (évite une FK cassée).
+      const existingCategories = await prisma.category.findMany({
+        where: { id: { in: pkg.categories } },
+        select: { id: true }
+      });
+
+      const saved = await prisma.package.upsert({
+        where: { name: pkg.name },
+        // Structure mise à jour, prix jamais touchés.
+        update: { description: pkg.description, isFullPackage: pkg.isFullPackage, order: pkg.order },
+        create: { name: pkg.name, description: pkg.description, isFullPackage: pkg.isFullPackage, order: pkg.order }
+      });
+
+      for (const category of existingCategories) {
+        await prisma.packageCategory.upsert({
+          where: { packageId_categoryId: { packageId: saved.id, categoryId: category.id } },
+          update: {},
+          create: { packageId: saved.id, categoryId: category.id }
         });
       }
     }
 
-    // Seed sample places
-    console.log('Seeding country places...');
-    const places = [
-      {
-        countryId: countryMap['France'],
-        name: 'Eiffel Tower',
-        description: 'Iconic iron lattice tower on the Champ de Mars in Paris.',
-        image: 'https://images.unsplash.com/photo-1543349689-9a4d426bee8e'
-      },
-      {
-        countryId: countryMap['Italy'],
-        name: 'Colosseum',
-        description: 'Ancient amphitheater and icon of Rome.',
-        image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5'
-      }
-    ];
+    // Seed des actualités publiques (ex-midzoweb/src/data/news.ts).
+    // `category` pilote la pastille de couleur du slider, `scope` (ex-categoryKey) le filtrage (story 1.3).
+    // L'allemand n'a pas de colonne dédiée → il vit dans `translations.de`.
+    console.log('Seeding news...');
 
-    for (const place of places) {
-      if (place.countryId) {
-        await prisma.countryPlace.upsert({
-          where: {
-            countryId_name: {
-              countryId: place.countryId,
-              name: place.name
-            }
-          },
-          update: place,
-          create: place
-        });
+    for (const item of newsSeed) {
+      const data = {
+        title: item.title,
+        titleFr: item.titleFr,
+        description: item.description,
+        descriptionFr: item.descriptionFr,
+        category: item.category,
+        scope: item.categoryKey,
+        imageUrl: item.image,
+        link: item.link,
+        publishedAt: new Date(item.date),
+        isPublished: true,
+        translations: { de: { title: item.titleDe, description: item.descriptionDe } }
+      };
+
+      // `title` n'est pas unique en base → upsert manuel pour rester idempotent.
+      const existing = await prisma.news.findFirst({ where: { title: item.title } });
+      if (existing) {
+        await prisma.news.update({ where: { id: existing.id }, data });
+      } else {
+        await prisma.news.create({ data });
       }
     }
 
@@ -1222,6 +1514,20 @@ async function seedDatabase() {
           role: user.role,
         }
       });
+    }
+
+    // Seed embassies (story 4.1) — Embassy n'a pas de clé unique métier :
+    // upsert manuel par (country, name) pour rester idempotent.
+    console.log('Seeding embassies...');
+    for (const embassy of embassiesSeed) {
+      const existing = await prisma.embassy.findFirst({
+        where: { country: embassy.country, name: embassy.name },
+      });
+      if (existing) {
+        await prisma.embassy.update({ where: { id: existing.id }, data: embassy });
+      } else {
+        await prisma.embassy.create({ data: embassy });
+      }
     }
 
     console.log('✅ Database seeding completed successfully with Prisma!');

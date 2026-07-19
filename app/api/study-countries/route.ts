@@ -4,7 +4,7 @@ import { StudyCountryModel } from "@/src/models/StudyCountry";
 
 export async function GET(_: NextRequest) {
   try {
-    const data = await StudyCountryModel.findAll();
+    const data = await StudyCountryModel.findPublic();
     return corsJson({ success: true, data });
   } catch (error) {
     console.error("Study countries error:", error);

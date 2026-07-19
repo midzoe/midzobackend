@@ -58,6 +58,27 @@ function formatUser(user: any) {
   };
 }
 
+/**
+ * Règle unique de « profil premium complet » (FR9), partagée par `getProfileCompleteness`
+ * (story 2.3) et `getPremiumTripReadiness` (story 3.6). Renvoie les clés snake_case manquantes.
+ * Une chaîne vide ou blanche vaut « non renseigné » (d'anciennes lignes peuvent contenir "").
+ * « Langue + niveau » : `UserLanguage.level` est non nullable, donc une langue enregistrée
+ * a toujours un niveau — la présence d'au moins une langue suffit.
+ */
+function computeMissingProfileFields(user: {
+  nationality: string | null;
+  countryOfResidence: string | null;
+  languages: { language: string }[];
+}): string[] {
+  const isBlank = (value: string | null) => !value || value.trim().length === 0;
+
+  const missing: string[] = [];
+  if (isBlank(user.nationality)) missing.push("nationality");
+  if (isBlank(user.countryOfResidence)) missing.push("country_of_residence");
+  if (user.languages.length === 0) missing.push("languages");
+  return missing;
+}
+
 export class UserModel {
   static async findByUsername(username: string) {
     return prisma.user.findUnique({ where: { username }, select: USER_SELECT });
@@ -194,6 +215,49 @@ export class UserModel {
     return { allowed: true };
   }
 
+  /**
+   * Champs exigés d'un client premium avant son 1er trip (résidence, nationalité, langue + niveau).
+   * Les clés renvoyées sont en snake_case, comme le reste de l'API publique.
+   * Centralisé ici car la story 3.6 refuse le démarrage d'un trip (422) sur la même règle.
+   */
+  static async getProfileCompleteness(id: number) {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        nationality: true,
+        countryOfResidence: true,
+        languages: { select: { language: true } },
+      },
+    });
+
+    if (!user) return null;
+
+    const missing = computeMissingProfileFields(user);
+    return { complete: missing.length === 0, missing };
+  }
+
+  /**
+   * Aptitude d'un utilisateur à démarrer un trip premium (story 3.6).
+   * Une seule requête : le premium ET la complétude, sur la même règle que
+   * `getProfileCompleteness` (via `computeMissingProfileFields`) — pas de 2e définition de « complet ».
+   */
+  static async getPremiumTripReadiness(id: number) {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        isPremium: true,
+        nationality: true,
+        countryOfResidence: true,
+        languages: { select: { language: true } },
+      },
+    });
+
+    if (!user) return null;
+
+    const missing = computeMissingProfileFields(user);
+    return { isPremium: user.isPremium, complete: missing.length === 0, missing };
+  }
+
   static async update(id: number, updates: UpdateUserData) {
     const { languages, ...scalar } = updates;
 
@@ -245,6 +309,59 @@ export class UserModel {
       if (error.code === "P2025") return null;
       throw error;
     }
+  }
+
+  /**
+   * Story 9.5 : changement de mot de passe self-service. Vérifie l'ancien avant d'écrire le nouveau.
+   * Gère les anciens hash non-bcrypt (comparaison directe, comme validatePassword).
+   */
+  static async changePassword(id: number, oldPassword: string, newPassword: string) {
+    const user = await prisma.user.findUnique({ where: { id }, select: { passwordHash: true } });
+    if (!user) return { success: false, error: "user not found" };
+
+    const isBcrypt = user.passwordHash.startsWith("$2a$") || user.passwordHash.startsWith("$2b$");
+    const ok = isBcrypt
+      ? await bcrypt.compare(oldPassword, user.passwordHash)
+      : oldPassword === user.passwordHash;
+    if (!ok) return { success: false, error: "invalid current password" };
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({ where: { id }, data: { passwordHash: newHash } });
+    return { success: true };
+  }
+
+  /**
+   * Story 9.5 : changement d'email self-service. Vérifie le mot de passe, refuse un email déjà pris,
+   * pose le nouvel email en `emailVerified=false` et génère un code de re-vérification (renvoyé pour envoi).
+   */
+  static async changeEmail(id: number, newEmail: string, password: string) {
+    const user = await prisma.user.findUnique({ where: { id }, select: { passwordHash: true, email: true } });
+    if (!user) return { success: false, error: "user not found" as string };
+
+    const isBcrypt = user.passwordHash.startsWith("$2a$") || user.passwordHash.startsWith("$2b$");
+    const ok = isBcrypt
+      ? await bcrypt.compare(password, user.passwordHash)
+      : password === user.passwordHash;
+    if (!ok) return { success: false, error: "invalid password" };
+
+    if (newEmail !== user.email) {
+      const taken = await prisma.user.findUnique({ where: { email: newEmail }, select: { id: true } });
+      if (taken) return { success: false, error: "email already in use" };
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedCode = await bcrypt.hash(code, 8);
+    await prisma.user.update({
+      where: { id },
+      data: {
+        email: newEmail,
+        emailVerified: false,
+        verificationCode: hashedCode,
+        verificationCodeExpiry: new Date(Date.now() + 15 * 60 * 1000),
+        verificationCodeSentAt: new Date(),
+      },
+    });
+    return { success: true, code };
   }
 
   static async activatePremium(id: number) {

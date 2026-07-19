@@ -6,11 +6,19 @@ export interface CreateBlogData {
   body?: string;
   excerpt?: string;
   category?: string;
+  scope?: string;
+  subcategory?: string;
   author?: string;
   imageUrl?: string;
   publishedAt?: Date;
   isPublished?: boolean;
   translations?: Record<string, unknown>;
+}
+
+export interface BlogFilters {
+  onlyPublished?: boolean;
+  scope?: string;
+  subcategory?: string;
 }
 
 function formatBlog(b: any) {
@@ -21,6 +29,8 @@ function formatBlog(b: any) {
     body: b.body ?? null,
     excerpt: b.excerpt ?? null,
     category: b.category ?? null,
+    scope: b.scope ?? null,
+    subcategory: b.subcategory ?? null,
     author: b.author ?? null,
     image: b.imageUrl ?? null,
     published_at: b.publishedAt,
@@ -32,9 +42,12 @@ function formatBlog(b: any) {
 }
 
 export class BlogModel {
-  static async findAll(page = 1, limit = 20, onlyPublished = false) {
+  static async findAll(page = 1, limit = 20, filters: BlogFilters = {}) {
     const skip = (page - 1) * limit;
-    const where = onlyPublished ? { isPublished: true } : {};
+    const where: any = {};
+    if (filters.onlyPublished) where.isPublished = true;
+    if (filters.scope) where.scope = filters.scope;
+    if (filters.subcategory) where.subcategory = filters.subcategory;
     const [items, total] = await Promise.all([
       prisma.blog.findMany({
         where,
@@ -65,6 +78,8 @@ export class BlogModel {
         body: data.body,
         excerpt: data.excerpt,
         category: data.category,
+        scope: data.scope,
+        subcategory: data.subcategory,
         author: data.author,
         imageUrl: data.imageUrl,
         publishedAt: data.publishedAt ?? new Date(),
@@ -85,6 +100,8 @@ export class BlogModel {
           body: data.body,
           excerpt: data.excerpt,
           category: data.category,
+          scope: data.scope,
+          subcategory: data.subcategory,
           author: data.author,
           imageUrl: data.imageUrl,
           publishedAt: data.publishedAt,

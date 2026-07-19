@@ -12,6 +12,9 @@ export interface CreateUniversityData {
   website?: string;
   applicationUrl?: string;
   specialty?: string;
+  // Story 5.3 : exigence de langue (nom de langue + niveau CEFR A1..C2).
+  requiredLanguage?: string;
+  requiredLanguageLevel?: string;
 }
 
 export interface CreateProgramData {
@@ -199,6 +202,33 @@ export class UniversityModel {
       return programs;
     } catch (error) {
       throw new Error(`Failed to fetch programs: ${error}`);
+    }
+  }
+
+  // Story 5.2 : programmes réellement proposés par les universités d'un pays donné
+  // (facettes dérivées des vraies données, pas du tableau figé StudyCountry.popularPrograms).
+  static async getProgramsByCountry(country: string): Promise<{ name: string; level: string }[]> {
+    try {
+      const programs = await prisma.universityProgram.findMany({
+        where: {
+          university: {
+            country: { equals: country }
+          }
+        },
+        select: {
+          name: true,
+          level: true
+        },
+        distinct: ['name', 'level'],
+        orderBy: [
+          { name: 'asc' },
+          { level: 'asc' }
+        ]
+      });
+
+      return programs;
+    } catch (error) {
+      throw new Error(`Failed to fetch programs by country: ${error}`);
     }
   }
 

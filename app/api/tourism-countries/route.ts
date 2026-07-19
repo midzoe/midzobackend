@@ -4,7 +4,7 @@ import { TourismCountryModel } from "@/src/models/TourismCountry";
 
 export async function GET(_: NextRequest) {
   try {
-    const data = await TourismCountryModel.findAll();
+    const data = await TourismCountryModel.findPublic();
     return corsJson({ success: true, data });
   } catch (error) {
     console.error("Tourism countries error:", error);

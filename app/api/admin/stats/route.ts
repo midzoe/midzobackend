@@ -18,6 +18,15 @@ export async function GET(request: NextRequest) {
       totalTourismCountries,
       totalVisas,
       totalAccommodations,
+      // Story 9.4 : contacts, newsletter, file de validation.
+      totalContacts,
+      newContacts,
+      newsletterStudy,
+      newsletterTourism,
+      draftStudyCountries,
+      draftTourismCountries,
+      draftTourismPrograms,
+      draftCountries,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { isPremium: true } }),
@@ -27,7 +36,18 @@ export async function GET(request: NextRequest) {
       prisma.tourismCountry.count(),
       prisma.visa.count(),
       prisma.accommodation.count(),
+      prisma.contactMessage.count(),
+      prisma.contactMessage.count({ where: { status: "new" } }),
+      prisma.user.count({ where: { newsletterStudy: true } }),
+      prisma.user.count({ where: { newsletterTourism: true } }),
+      prisma.studyCountry.count({ where: { isValidated: false } }),
+      prisma.tourismCountry.count({ where: { isValidated: false } }),
+      prisma.tourismProgram.count({ where: { isValidated: false } }),
+      prisma.country.count({ where: { isValidated: false } }),
     ]);
+
+    const pendingValidation =
+      draftStudyCountries + draftTourismCountries + draftTourismPrograms + draftCountries;
 
     return corsJson({
       success: true,
@@ -42,6 +62,12 @@ export async function GET(request: NextRequest) {
         total_accommodations: totalAccommodations,
         // aliases for frontend compatibility
         total_countries: totalStudyCountries + totalTourismCountries,
+        // Story 9.4 — insights supplémentaires
+        total_contacts: totalContacts,
+        new_contacts: newContacts,
+        newsletter_study: newsletterStudy,
+        newsletter_tourism: newsletterTourism,
+        pending_validation: pendingValidation,
       },
     });
   } catch (error) {

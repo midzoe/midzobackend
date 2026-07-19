@@ -9,21 +9,23 @@ export interface CreateVisaData {
   cost?: number;
   documentsRequired?: string[];
   notes?: string;
+  embassyId?: number | null;
 }
 
 export class VisaModel {
   static async findByRoute(from: string, to: string) {
     return prisma.visa.findUnique({
       where: { originCountry_destinationCountry: { originCountry: from, destinationCountry: to } },
+      include: { embassy: true },
     });
   }
 
   static async findById(id: number) {
-    return prisma.visa.findUnique({ where: { id } });
+    return prisma.visa.findUnique({ where: { id }, include: { embassy: true } });
   }
 
   static async findAll() {
-    return prisma.visa.findMany({ orderBy: { originCountry: "asc" } });
+    return prisma.visa.findMany({ orderBy: { originCountry: "asc" }, include: { embassy: true } });
   }
 
   static async create(data: CreateVisaData) {
@@ -37,6 +39,7 @@ export class VisaModel {
         cost: data.cost,
         documentsRequired: data.documentsRequired as any,
         notes: data.notes,
+        embassyId: data.embassyId ?? null,
       },
     });
   }
@@ -54,6 +57,7 @@ export class VisaModel {
           cost: data.cost,
           documentsRequired: data.documentsRequired as any,
           notes: data.notes,
+          embassyId: data.embassyId,
         },
       });
     } catch (error: any) {

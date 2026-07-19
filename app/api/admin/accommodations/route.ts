@@ -5,6 +5,20 @@ import { AccommodationModel } from "@/src/models/Accommodation";
 
 const VALID_TYPES = ["studio", "shared", "residence", "homestay"];
 
+// Story 9.1 : liste admin des hébergements (écran 9.6).
+export async function GET(request: NextRequest) {
+  try {
+    const auth = await getAuthWithRole(request);
+    if (!auth) return corsJson({ error: "Unauthorized" }, { status: 401 });
+    if (!isAdmin(auth.role)) return corsJson({ error: "Forbidden" }, { status: 403 });
+    const items = await AccommodationModel.findAll({});
+    return corsJson({ success: true, data: items, total: items.length });
+  } catch (error) {
+    console.error("Admin list accommodations error:", error);
+    return corsJson({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const auth = await getAuthWithRole(request);
@@ -12,8 +26,8 @@ export async function POST(request: NextRequest) {
     if (!isAdmin(auth.role)) return corsJson({ error: "Forbidden" }, { status: 403 });
 
     const body = await request.json();
-    const { name, country, city, type, price_per_month, currency, contact, description, images } =
-      body;
+    const { name, country, city, type, currency, contact, description, images } = body;
+    const price_per_month = body.price_per_month ?? body.pricePerMonth;
 
     if (!name || !country || !city || !type || price_per_month == null) {
       return corsJson(
@@ -49,5 +63,5 @@ export async function POST(request: NextRequest) {
 }
 
 export async function OPTIONS() {
-  return corsOptions("POST, OPTIONS");
+  return corsOptions("GET, POST, OPTIONS");
 }

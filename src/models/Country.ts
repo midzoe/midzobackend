@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import prisma from '../../lib/prisma';
 
 // Types temporaires - seront remplacés par les vrais types Prisma une fois générés
@@ -16,36 +17,53 @@ export interface CountryDetail extends CountryType {
   trends: CountryTrendType[];
 }
 
+// L'ordre des sous-tables est curaté (colonne `order`) et positionnellement aligné
+// avec les traductions : ne jamais le remplacer par un tri alphabétique.
+const DETAILS_INCLUDE = {
+  quickFacts: { orderBy: { order: 'asc' } },
+  traditions: { orderBy: { order: 'asc' } },
+  cuisine: { orderBy: { order: 'asc' } },
+  places: { orderBy: { order: 'asc' } },
+  trends: { orderBy: { order: 'asc' } }
+} satisfies Prisma.CountryInclude;
+
 export class CountryModel {
+  /**
+   * Liste publique des pays (filtres, sélecteurs, Destinations).
+   * Volontairement SANS filtre `isValidated` : le gate ne porte que sur la fiche détaillée.
+   */
   static async findAll(): Promise<CountryType[]> {
     try {
       const countries = await prisma.country.findMany({
         orderBy: { name: 'asc' }
       });
-      
+
       return countries;
     } catch (error) {
       throw new Error(`Failed to fetch countries: ${error}`);
     }
   }
 
+  /** Fiche pays publique : seules les fiches validées sont servies (null sinon → 404). */
   static async findByName(name: string): Promise<CountryDetail | null> {
     try {
       const country = await prisma.country.findUnique({
         where: { name },
-        include: {
-          quickFacts: true,
-          traditions: true,
-          cuisine: true,
-          places: true,
-          trends: true
-        }
+        include: DETAILS_INCLUDE
       });
-      
+
+      if (!country || !country.isValidated) return null;
+
       return country;
     } catch (error) {
       throw new Error(`Failed to find country details: ${error}`);
     }
+  }
+
+  /** Story 4.2 : une destination n'est acceptée que si le pays est validé (Country.isValidated). */
+  static async isValidatedByName(name: string): Promise<boolean> {
+    const country = await prisma.country.findUnique({ where: { name } });
+    return Boolean(country?.isValidated);
   }
 
   static async findById(id: number): Promise<CountryType | null> {
@@ -60,19 +78,14 @@ export class CountryModel {
     }
   }
 
+  /** Accès par id avec détails (usage admin) : pas de gate `isValidated`, les brouillons restent visibles. */
   static async findByIdWithDetails(id: number): Promise<CountryDetail | null> {
     try {
       const country = await prisma.country.findUnique({
         where: { id },
-        include: {
-          quickFacts: true,
-          traditions: true,
-          cuisine: true,
-          places: true,
-          trends: true
-        }
+        include: DETAILS_INCLUDE
       });
-      
+
       return country;
     } catch (error) {
       throw new Error(`Failed to find country with details: ${error}`);

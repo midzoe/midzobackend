@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Test Immigration News</title>
+    <link>http://localhost:3000/test-immigration-feed.xml</link>
+    <description>Flux de test E2E pour le scraping (Epic 11)</description>
+    <item>
+      <title>E2E Visa policy update for students</title>
+      <link>https://example-e2e.test/news/visa-students-2026</link>
+      <description><![CDATA[Nouvelle politique de visa étudiant annoncée.]]></description>
+      <pubDate>Mon, 19 Jul 2026 08:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>E2E Work permit rules revised</title>
+      <link>https://example-e2e.test/news/work-permit-2026</link>
+      <description><![CDATA[Révision des règles de permis de travail.]]></description>
+      <pubDate>Mon, 19 Jul 2026 09:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

@@ -1,6 +1,6 @@
 import prisma from "../../lib/prisma";
 
-export type NotificationType = "visa_alert" | "newsletter" | "trip_reminder";
+export type NotificationType = "visa_alert" | "newsletter" | "trip_reminder" | "premium_purchase";
 
 export interface CreateNotificationData {
   userId: number;
@@ -32,6 +32,35 @@ export class NotificationModel {
         data: data.data as any,
       },
     });
+  }
+
+  /**
+   * Story 4.4 : crée une alerte visa pour un premium, sans doublon par destination.
+   * Clé logique = (userId, type=visa_alert, data.destination).
+   */
+  static async createVisaAlertIfAbsent(
+    userId: number,
+    destination: string,
+    title: string,
+    message: string
+  ) {
+    const existing = await prisma.notification.findFirst({
+      where: {
+        userId,
+        type: "visa_alert",
+        data: { path: ["destination"], equals: destination },
+      },
+    });
+    if (existing) return { created: false, notification: existing };
+
+    const notification = await this.create({
+      userId,
+      type: "visa_alert",
+      title,
+      message,
+      data: { destination },
+    });
+    return { created: true, notification };
   }
 
   static async markRead(id: number, userId: number) {

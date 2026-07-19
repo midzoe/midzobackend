@@ -2,6 +2,28 @@ import { NextRequest } from "next/server";
 import { getAuthWithRole, isAdmin } from "@/lib/auth";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { VisaModel } from "@/src/models/Visa";
+import { CountryModel } from "@/src/models/Country";
+import { EmbassyModel } from "@/src/models/Embassy";
+
+// Story 4.2 : la destination doit être un pays validé, et l'ambassade (si fournie)
+// doit être « compétente » (même pays que la destination). Renvoie un message d'erreur
+// (400) ou null si tout est valide.
+async function validateVisaRule(
+  destinationCountry: string,
+  embassyId?: number | null
+): Promise<string | null> {
+  if (!(await CountryModel.isValidatedByName(destinationCountry))) {
+    return "destination_country doit être un pays validé";
+  }
+  if (embassyId != null) {
+    const embassy = await EmbassyModel.findById(embassyId);
+    if (!embassy) return "embassy_id introuvable";
+    if (embassy.country !== destinationCountry) {
+      return "ambassade non compétente pour cette destination";
+    }
+  }
+  return null;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,6 +55,7 @@ export async function POST(request: NextRequest) {
       cost,
       documents_required,
       notes,
+      embassy_id,
     } = body;
 
     if (!origin_country || !destination_country) {
@@ -41,6 +64,18 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Les formulaires envoient embassy_id en chaîne ("" = aucune) → coercition robuste.
+    const embassyId =
+      embassy_id === "" || embassy_id === undefined || embassy_id === null
+        ? null
+        : Number(embassy_id);
+    if (embassyId !== null && Number.isNaN(embassyId)) {
+      return corsJson({ error: "embassy_id invalide" }, { status: 400 });
+    }
+
+    const validationError = await validateVisaRule(destination_country, embassyId);
+    if (validationError) return corsJson({ error: validationError }, { status: 400 });
 
     const visa = await VisaModel.create({
       originCountry: origin_country,
@@ -51,6 +86,7 @@ export async function POST(request: NextRequest) {
       cost,
       documentsRequired: documents_required,
       notes,
+      embassyId,
     });
 
     return corsJson({ success: true, visa }, { status: 201 });

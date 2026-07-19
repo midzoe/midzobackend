@@ -19,8 +19,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const article = await NewsModel.update(articleId, {
       title,
       body: newsBody,
+      description: body.description,
       category,
+      scope: body.scope,
+      subcategory: body.subcategory,
       imageUrl: image_url,
+      // Story 11.2 : validation d'un brouillon (scrappé) = publication.
+      isPublished: body.is_published ?? body.isPublished,
       publishedAt: published_at ? new Date(published_at) : undefined,
       translations,
     });

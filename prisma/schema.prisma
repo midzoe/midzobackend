@@ -36,8 +36,26 @@ model User {
   bookings      UserBooking[]
   languages     UserLanguage[]
   notifications Notification[]
+  trips         Trip[]
+  purchases     Purchase[]
+  premiumCase   PremiumCase?
 
   @@map("users")
+}
+
+// Story 9.3 (FR38) : suivi de dossier séparé pour les clients premium (accompagnement humain).
+model PremiumCase {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @unique @map("user_id")
+  status     String   @default("open") // « open » | « in_progress » | « closed »
+  notes      String?
+  assignedTo String?  @map("assigned_to")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("premium_cases")
 }
 
 model UserLanguage {
@@ -57,20 +75,120 @@ model Category {
   name        String
   description String?
   icon        String?
+  isPublic    Boolean   @default(true) @map("is_public")
+  order       Int       @default(0)
   createdAt   DateTime  @default(now()) @map("created_at")
 
   // Relations
-  services Service[]
+  services      Service[]
+  subcategories Subcategory[]
+  packages      PackageCategory[]
 
   @@map("categories")
 }
 
+/// Config tarifaire globale (singleton, id = 1). Montants en CENTIMES entiers :
+/// les flottants fausseraient les remises dégressives, et Stripe travaille en centimes.
+/// Valeurs initiales à 0 — les tarifs sont saisis par l'admin (aucun montant inventé).
+model PricingConfig {
+  id                            Int      @id @default(1)
+  pricePerSubcategoryCents      Int      @default(0) @map("price_per_subcategory_cents")
+  discountTwoCategoriesPct      Int      @default(0) @map("discount_two_categories_pct")
+  discountThreePlusCategoriesPct Int     @default(0) @map("discount_three_plus_categories_pct")
+  currency                      String   @default("EUR")
+  updatedAt                     DateTime @updatedAt @map("updated_at")
+
+  @@map("pricing_config")
+}
+
+model Package {
+  id                       Int      @id @default(autoincrement())
+  name                     String   @unique
+  description              String?
+  basePriceCents           Int      @default(0) @map("base_price_cents")
+  /// null => repli sur PricingConfig.pricePerSubcategoryCents
+  pricePerSubcategoryCents Int?     @map("price_per_subcategory_cents")
+  isFullPackage            Boolean  @default(false) @map("is_full_package")
+  isCustom                 Boolean  @default(false) @map("is_custom")
+  isActive                 Boolean  @default(true) @map("is_active")
+  order                    Int      @default(0)
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  categories PackageCategory[]
+  purchases  Purchase[]
+
+  @@map("packages")
+}
+
+/// Achat ponctuel d'un package (story 3.4). Montants en CENTIMES entiers.
+/// Pas d'abonnement récurrent en v1 : le premium est permanent une fois acquis.
+model Purchase {
+  id                    Int       @id @default(autoincrement())
+  userId                Int       @map("user_id")
+  /// null => package personnalisé (aucun package prédéfini ne correspondait)
+  packageId             Int?      @map("package_id")
+  isCustom              Boolean   @default(false) @map("is_custom")
+  amountCents           Int       @map("amount_cents")
+  currency              String    @default("EUR")
+  /// Snapshot du devis AU MOMENT DE L'ACHAT (contrat story 3.2). Les tarifs évoluent,
+  /// la facture non : le détail doit rester lisible des mois plus tard.
+  quote                 Json
+  status                String    @default("pending") // "pending" | "paid"
+  /// Référence de paiement — UNIQUE : garde-fou en base contre le double
+  /// enregistrement d'un même paiement (FR8, idempotence).
+  stripeSessionId       String?   @unique @map("stripe_session_id")
+  stripePaymentIntentId String?   @map("stripe_payment_intent_id")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  paidAt                DateTime? @map("paid_at")
+
+  // Relations
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package Package? @relation(fields: [packageId], references: [id], onDelete: SetNull)
+
+  @@map("purchases")
+}
+
+model PackageCategory {
+  id         Int    @id @default(autoincrement())
+  packageId  Int    @map("package_id")
+  categoryId String @map("category_id")
+
+  // Relations
+  package  Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([packageId, categoryId], map: "uq_package_category")
+  @@map("package_categories")
+}
+
+model Subcategory {
+  id         Int      @id @default(autoincrement())
+  categoryId String   @map("category_id")
+  name       String
+  order      Int      @default(0)
+  isOther    Boolean  @default(false) @map("is_other")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, name], map: "uq_subcategory_categoryId_name")
+  @@map("subcategories")
+}
+
 model Service {
   id            Int      @id @default(autoincrement())
-  name          String
+  name          String // clé de catalogue, alignée sur Subcategory.name et les clés front
+  displayName   String?  @map("display_name") // libellé affiché quand il diffère de la clé
   description   String?
   image         String?
   learnMoreLink String?  @map("learn_more_link")
+  translationKey String? @map("translation_key")
+  isExternal    Boolean  @default(false) @map("is_external") // redirige vers une plateforme partenaire
+  deliveryMode  String   @default("online") @map("delivery_mode") // "online"|"physical"|"hybrid"
+  order         Int      @default(0)
   categoryId    String   @map("category_id")
   createdAt     DateTime @default(now()) @map("created_at")
 
@@ -78,6 +196,7 @@ model Service {
   category Category      @relation(fields: [categoryId], references: [id])
   bookings UserBooking[]
 
+  @@unique([categoryId, name], map: "uq_service_categoryId_name")
   @@map("services")
 }
 
@@ -85,6 +204,7 @@ model Country {
   id                Int      @id @default(autoincrement())
   name              String   @unique
   code              String?  @unique
+  region            String?
   heroImage         String?  @map("hero_image")
   motto             String?
   history           String?
@@ -95,6 +215,10 @@ model Country {
   tourismAvailable  Boolean  @default(false) @map("tourism_available")
   visaInfoAvailable Boolean  @default(false) @map("visa_info_available")
   isValidated       Boolean  @default(false) @map("is_validated")
+  // Ordre d'affichage curaté (position dans la liste des pays d'études du Hero) ; 0 = non curaté.
+  order             Int      @default(0)
+  // Traductions fr/de des champs textuels du pays : { fr: { motto, history, modernLife }, de: {...} }
+  translations      Json?
   createdAt         DateTime @default(now()) @map("created_at")
 
   // Relations
@@ -112,6 +236,9 @@ model CountryQuickFact {
   countryId Int    @map("country_id")
   title     String
   value     String
+  order     Int    @default(0)
+  // { fr: { title, value }, de: { title, value } }
+  translations Json?
 
   // Relations
   country Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
@@ -126,6 +253,9 @@ model CountryTradition {
   name        String
   description String?
   image       String?
+  order       Int     @default(0)
+  // { fr: { name, description }, de: { name, description } }
+  translations Json?
 
   // Relations
   country Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
@@ -140,6 +270,9 @@ model CountryCuisine {
   name        String
   description String?
   image       String?
+  order       Int     @default(0)
+  // { fr: { name, description }, de: { name, description } }
+  translations Json?
 
   // Relations
   country Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
@@ -154,6 +287,9 @@ model CountryPlace {
   name        String
   description String?
   image       String?
+  order       Int     @default(0)
+  // { fr: { name, description }, de: { name, description } }
+  translations Json?
 
   // Relations
   country Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
@@ -166,6 +302,9 @@ model CountryTrend {
   id        Int    @id @default(autoincrement())
   countryId Int    @map("country_id")
   trendText String @map("trend_text")
+  order     Int    @default(0)
+  // { fr: { trendText }, de: { trendText } }
+  translations Json?
 
   // Relations
   country Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
@@ -181,6 +320,8 @@ model News {
   description   String?
   descriptionFr String?  @map("description_fr")
   category      String?
+  scope         String?
+  subcategory   String?
   imageUrl      String?  @map("image_url")
   link          String?
   publishedAt   DateTime @default(now()) @map("published_at")
@@ -199,6 +340,8 @@ model Blog {
   body        String?
   excerpt     String?
   category    String?
+  scope       String?
+  subcategory String?
   author      String?
   imageUrl    String?  @map("image_url")
   publishedAt DateTime @default(now()) @map("published_at")
@@ -231,6 +374,8 @@ model StudyCountry {
   processingTimeVisa    String?  @map("processing_time_visa")
   studyAvailable        Boolean  @default(true) @map("study_available")
   isValidated           Boolean  @default(false) @map("is_validated")
+  // Story 5.5 : provenance (« ai:claude-opus-4-8 » pour un brouillon IA, null si saisie manuelle).
+  source                String?
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
@@ -272,11 +417,31 @@ model Visa {
   cost               Float?
   documentsRequired  Json?    @map("documents_required")
   notes              String?
+  embassyId          Int?     @map("embassy_id")
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
 
+  embassy Embassy? @relation(fields: [embassyId], references: [id], onDelete: SetNull)
+
   @@unique([originCountry, destinationCountry])
   @@map("visas")
+}
+
+model Embassy {
+  id        Int      @id @default(autoincrement())
+  country   String
+  name      String
+  location  String?
+  link      String?
+  email     String?
+  phone     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  visas Visa[]
+
+  @@index([country])
+  @@map("embassies")
 }
 
 model Accommodation {
@@ -294,6 +459,209 @@ model Accommodation {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@map("accommodations")
+}
+
+// Story 5.4 : centres de langue (potentiels partenaires), cibles de redirection quand
+// l'étudiant n'atteint pas l'exigence de langue d'une université (5.3 → UI 5.8).
+model LanguageCenter {
+  id        Int      @id @default(autoincrement())
+  name      String
+  country   String
+  city      String?
+  language  String   // vocabulaire FR, cohérent avec UserLanguage/requiredLanguage (ex. « Anglais »)
+  levels    String?  // niveaux enseignés, ex. « A1-C1 » (info d'affichage)
+  link      String?
+  isPartner Boolean  @default(false) @map("is_partner")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([language])
+  @@index([country])
+  @@map("language_centers")
+}
+
+// Epic 6 — Tourisme ciblé.
+// Story 6.1 : programmes tourisme à destination fixe (safari/sport) + itinéraire/transport.
+model TourismProgram {
+  id          Int      @id @default(autoincrement())
+  title       String
+  subcategory String   // « safari » | « sport » | ...
+  country     String   // destination fixe
+  city        String?
+  description String?
+  itinerary   String?
+  transport   String?
+  price       Float?
+  currency    String   @default("EUR")
+  images      Json?
+  isValidated Boolean  @default(false) @map("is_validated")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([subcategory])
+  @@map("tourism_programs")
+}
+
+// Story 6.2 : événements tourisme (publiés / à venir).
+model TourismEvent {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  country     String?
+  city        String?
+  location    String?
+  startDate   DateTime? @map("start_date")
+  status      String    @default("upcoming") // « published » | « upcoming »
+  link        String?
+  imageUrl    String?   @map("image_url")
+  isPublished Boolean   @default(false) @map("is_published")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("tourism_events")
+}
+
+// Story 6.3 : partenaires (redirection trackée pour le tourisme global).
+model Partner {
+  id          Int      @id @default(autoincrement())
+  name        String
+  category    String?
+  url         String
+  logoUrl     String?  @map("logo_url")
+  description String?
+  clickCount  Int      @default(0) @map("click_count")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@map("partners")
+}
+
+// Epic 7 — Espace voyage & gestion des trips.
+model Trip {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @map("user_id")
+  title          String
+  status         String   @default("planning") // « planning » | « upcoming » | « completed »
+  startDate      DateTime? @map("start_date")
+  endDate        DateTime? @map("end_date")
+  lastReminderAt DateTime? @map("last_reminder_at") // idempotence des emails de rappel (7.5)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destinations  TripDestination[]
+  services      TripService[]
+  checklistItems TripChecklistItem[]
+
+  @@index([userId])
+  @@map("trips")
+}
+
+model TripDestination {
+  id            Int       @id @default(autoincrement())
+  tripId        Int       @map("trip_id")
+  country       String
+  city          String?
+  arrivalDate   DateTime? @map("arrival_date")
+  departureDate DateTime? @map("departure_date")
+  order         Int       @default(0)
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  trip     Trip          @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  services TripService[]
+
+  @@index([tripId])
+  @@map("trip_destinations")
+}
+
+model TripService {
+  id            Int      @id @default(autoincrement())
+  tripId        Int      @map("trip_id")
+  destinationId Int?     @map("destination_id")
+  type          String   // « flight » | « accommodation » | « visa » | « insurance » | « bank » | « language » ...
+  label         String
+  status        String   @default("pending") // « pending » | « done »
+  data          Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  trip        Trip             @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  destination TripDestination? @relation(fields: [destinationId], references: [id], onDelete: SetNull)
+
+  @@index([tripId])
+  @@map("trip_services")
+}
+
+model TripChecklistItem {
+  id        Int      @id @default(autoincrement())
+  tripId    Int      @map("trip_id")
+  label     String
+  category  String?
+  isDone    Boolean  @default(false) @map("is_done")
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@map("trip_checklist_items")
+}
+
+// Epic 8 — Contact intelligent & Newsletter.
+// Story 8.1 : message de contact rattaché à l'arbre catégorie/sous-catégorie (8.2).
+// userId + isPremium capturés au moment de l'envoi pour l'insight client vs premium (8.3).
+model ContactMessage {
+  id          Int      @id @default(autoincrement())
+  name        String
+  email       String
+  subject     String?
+  category    String?  // id de Category (arbre des sujets 8.2)
+  subcategory String?
+  message     String
+  userId      Int?     @map("user_id") // null => visiteur non connecté
+  isPremium   Boolean  @default(false) @map("is_premium") // snapshot à l'envoi
+  status      String   @default("new") // « new » | « read » | « archived »
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([category])
+  @@index([status])
+  @@map("contact_messages")
+}
+
+// Story 8.4 : abonnés newsletter sans compte (les utilisateurs ont newsletterStudy/Tourism sur User).
+model NewsletterSubscriber {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  study     Boolean  @default(false)
+  tourism   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("newsletter_subscribers")
+}
+
+// Epic 10 — Orientation (v1.1).
+// Story 10.1 (FR34/FR35) : ressources d'orientation études & formations.
+// `location` (lieu de la formation) n'est exposé qu'aux premium (FR35).
+model OrientationResource {
+  id          Int      @id @default(autoincrement())
+  title       String
+  type        String   // « guide » | « book » | « company » | « certification »
+  category    String?  // domaine (ex. « informatique »)
+  description String?
+  provider    String?  // organisme / éditeur
+  link        String?
+  location    String?  // lieu de la formation — PREMIUM ONLY
+  imageUrl    String?  @map("image_url")
+  isValidated Boolean  @default(true) @map("is_validated")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([type])
+  @@index([category])
+  @@map("orientation_resources")
 }
 
 model Notification {
@@ -344,6 +712,9 @@ model University {
   applicationUrl String?  @map("application_url")
   specialty      String?
   country        String   @default("Germany")
+  // Story 5.3 : exigence de langue (nom de langue + niveau CEFR A1..C2), nullable.
+  requiredLanguage      String? @map("required_language")
+  requiredLanguageLevel String? @map("required_language_level")
   createdAt      DateTime @default(now()) @map("created_at")
 
   // Relations

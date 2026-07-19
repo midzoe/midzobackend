@@ -20,15 +20,28 @@ export interface CreateStudyCountryData {
   processingTimeVisa?: string;
   studyAvailable?: boolean;
   isValidated?: boolean;
+  source?: string;
 }
 
 export class StudyCountryModel {
+  // Admin : tout, y compris les brouillons (isValidated=false).
   static async findAll() {
     return prisma.studyCountry.findMany({ orderBy: { name: "asc" } });
   }
 
+  // Public (gate 9.2 / FR37) : uniquement les pays validés — les brouillons IA (5.5) restent cachés.
+  static async findPublic() {
+    return prisma.studyCountry.findMany({ where: { isValidated: true }, orderBy: { name: "asc" } });
+  }
+
   static async findById(id: number) {
     return prisma.studyCountry.findUnique({ where: { id } });
+  }
+
+  // Public : renvoie null (→ 404) tant que non validé.
+  static async findByIdPublic(id: number) {
+    const c = await prisma.studyCountry.findUnique({ where: { id } });
+    return c && c.isValidated ? c : null;
   }
 
   static async create(data: CreateStudyCountryData) {
@@ -53,6 +66,7 @@ export class StudyCountryModel {
         processingTimeVisa: data.processingTimeVisa,
         studyAvailable: data.studyAvailable ?? true,
         isValidated: data.isValidated ?? false,
+        source: data.source,
       },
     });
   }

@@ -14,15 +14,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (isNaN(accomId)) return corsJson({ error: "Invalid id" }, { status: 400 });
 
     const body = await request.json();
-    const { name, country, city, type, price_per_month, currency, contact, description, images } =
-      body;
+    const { name, country, city, type, currency, contact, description, images } = body;
+    const price_per_month = body.price_per_month ?? body.pricePerMonth;
 
     const accommodation = await AccommodationModel.update(accomId, {
       name,
       country,
       city,
       type,
-      pricePerMonth: price_per_month,
+      pricePerMonth: price_per_month != null ? Number(price_per_month) : undefined,
       currency,
       contact,
       description,

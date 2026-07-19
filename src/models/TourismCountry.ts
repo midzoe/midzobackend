@@ -21,12 +21,23 @@ export interface CreateTourismCountryData {
 }
 
 export class TourismCountryModel {
+  // Admin : tout, y compris les brouillons.
   static async findAll() {
     return prisma.tourismCountry.findMany({ orderBy: { name: "asc" } });
   }
 
+  // Public (gate 9.2 / FR37) : uniquement les pays validés.
+  static async findPublic() {
+    return prisma.tourismCountry.findMany({ where: { isValidated: true }, orderBy: { name: "asc" } });
+  }
+
   static async findById(id: number) {
     return prisma.tourismCountry.findUnique({ where: { id } });
+  }
+
+  static async findByIdPublic(id: number) {
+    const c = await prisma.tourismCountry.findUnique({ where: { id } });
+    return c && c.isValidated ? c : null;
   }
 
   static async create(data: CreateTourismCountryData) {

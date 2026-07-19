@@ -7,11 +7,19 @@ export interface CreateNewsData {
   description?: string;
   descriptionFr?: string;
   category?: string;
+  scope?: string;
+  subcategory?: string;
   imageUrl?: string;
   link?: string;
   publishedAt?: Date;
   isPublished?: boolean;
   translations?: Record<string, unknown>;
+}
+
+export interface NewsFilters {
+  onlyPublished?: boolean;
+  scope?: string;
+  subcategory?: string;
 }
 
 function formatNews(n: any) {
@@ -23,6 +31,8 @@ function formatNews(n: any) {
     description: n.description ?? null,
     description_fr: n.descriptionFr ?? null,
     category: n.category ?? null,
+    scope: n.scope ?? null,
+    subcategory: n.subcategory ?? null,
     image: n.imageUrl ?? null,
     link: n.link ?? null,
     published_at: n.publishedAt,
@@ -34,9 +44,12 @@ function formatNews(n: any) {
 }
 
 export class NewsModel {
-  static async findAll(page = 1, limit = 20, onlyPublished = false) {
+  static async findAll(page = 1, limit = 20, filters: NewsFilters = {}) {
     const skip = (page - 1) * limit;
-    const where = onlyPublished ? { isPublished: true } : {};
+    const where: any = {};
+    if (filters.onlyPublished) where.isPublished = true;
+    if (filters.scope) where.scope = filters.scope;
+    if (filters.subcategory) where.subcategory = filters.subcategory;
     const [items, total] = await Promise.all([
       prisma.news.findMany({
         where,
@@ -54,6 +67,29 @@ export class NewsModel {
     return n ? formatNews(n) : null;
   }
 
+  // Story 11.2 : brouillons scrappés en attente de validation (isPublished=false), filtrable par scope.
+  static async findDrafts(scope?: string) {
+    const items = await prisma.news.findMany({
+      where: { isPublished: false, ...(scope ? { scope } : {}) },
+      orderBy: { publishedAt: "desc" },
+    });
+    return items.map(formatNews);
+  }
+
+  // Story 11.1 : dédup du scraping — un article déjà présent (même lien, ou même titre) n'est pas recréé.
+  static async existsByLinkOrTitle(link: string | undefined, title: string) {
+    const n = await prisma.news.findFirst({
+      where: {
+        OR: [
+          ...(link ? [{ link }] : []),
+          { title },
+        ],
+      },
+      select: { id: true },
+    });
+    return !!n;
+  }
+
   static async create(data: CreateNewsData) {
     const n = await prisma.news.create({
       data: {
@@ -63,6 +99,8 @@ export class NewsModel {
         description: data.description,
         descriptionFr: data.descriptionFr,
         category: data.category,
+        scope: data.scope,
+        subcategory: data.subcategory,
         imageUrl: data.imageUrl,
         link: data.link,
         publishedAt: data.publishedAt ?? new Date(),
@@ -84,6 +122,8 @@ export class NewsModel {
           description: data.description,
           descriptionFr: data.descriptionFr,
           category: data.category,
+          scope: data.scope,
+          subcategory: data.subcategory,
           imageUrl: data.imageUrl,
           link: data.link,
           publishedAt: data.publishedAt,

@@ -13,9 +13,25 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "20")));
     const skip = (page - 1) * limit;
+    // Story 9.3 : segment premium + recherche.
+    const segment = searchParams.get("segment");
+    const search = (searchParams.get("search") ?? "").trim();
+
+    const where: any = {
+      ...(segment === "premium" ? { isPremium: true } : {}),
+      ...(search
+        ? {
+            OR: [
+              { email: { contains: search, mode: "insensitive" } },
+              { username: { contains: search, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    };
 
     const [users, total] = await Promise.all([
       prisma.user.findMany({
+        where,
         select: {
           id: true,
           username: true,
@@ -37,7 +53,7 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit,
       }),
-      prisma.user.count(),
+      prisma.user.count({ where }),
     ]);
 
     return corsJson({

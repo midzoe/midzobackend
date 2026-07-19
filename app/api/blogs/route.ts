@@ -7,8 +7,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "20")));
+    const scope = searchParams.get("scope") ?? undefined;
+    const subcategory = searchParams.get("subcategory") ?? undefined;
 
-    const result = await BlogModel.findAll(page, limit);
+    const result = await BlogModel.findAll(page, limit, { onlyPublished: true, scope, subcategory });
     return corsJson({ success: true, data: result.items, total: result.total, page: result.page, pages: result.pages });
   } catch (error) {
     console.error("Blogs list error:", error);

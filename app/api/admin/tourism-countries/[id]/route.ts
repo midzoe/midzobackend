@@ -16,7 +16,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json();
     const data = await TourismCountryModel.update(countryId, {
       name: body.name,
-      nameFr: body.name_fr,
+      nameFr: body.name_fr ?? body.nameFr,
       region: body.region,
       capital: body.capital,
       flag: body.flag,
@@ -24,14 +24,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       description: body.description,
       currency: body.currency,
       language: body.language,
-      bestTime: body.best_time,
-      avgBudgetPerDay: body.avg_budget_per_day,
-      topAttractions: body.top_attractions,
-      visaForAfricans: body.visa_for_africans,
-      processingTimeVisa: body.processing_time_visa,
-      directFlightsFrom: body.direct_flights_from,
-      tourismAvailable: body.tourism_available,
-      isValidated: body.is_validated,
+      bestTime: body.best_time ?? body.bestTime,
+      avgBudgetPerDay: body.avg_budget_per_day ?? body.avgBudgetPerDay,
+      topAttractions: body.top_attractions ?? body.topAttractions,
+      visaForAfricans: body.visa_for_africans ?? body.visaForAfricans,
+      processingTimeVisa: body.processing_time_visa ?? body.processingTimeVisa,
+      directFlightsFrom: body.direct_flights_from ?? body.directFlightsFrom,
+      tourismAvailable: body.tourism_available ?? body.tourismAvailable,
+      isValidated: body.is_validated ?? body.isValidated,
     });
 
     if (!data) return corsJson({ error: "Country not found" }, { status: 404 });
