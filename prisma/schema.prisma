@@ -11,26 +11,26 @@ datasource db {
 }
 
 model User {
-  id                     Int            @id @default(autoincrement())
-  username               String         @unique
-  email                  String         @unique
-  passwordHash           String         @map("password_hash")
-  firstName              String?        @map("first_name")
-  lastName               String?        @map("last_name")
+  id                     Int       @id @default(autoincrement())
+  username               String    @unique
+  email                  String    @unique
+  passwordHash           String    @map("password_hash")
+  firstName              String?   @map("first_name")
+  lastName               String?   @map("last_name")
   phone                  String?
-  role                   String         @default("user") // "user" | "admin" | "superadmin"
+  role                   String    @default("user") // "user" | "admin" | "superadmin"
   nationality            String?
-  countryOfResidence     String?        @map("country_of_residence")
-  isPremium              Boolean        @default(false) @map("is_premium")
-  premiumSince           DateTime?      @map("premium_since")
-  newsletterStudy        Boolean        @default(false) @map("newsletter_study")
-  newsletterTourism      Boolean        @default(false) @map("newsletter_tourism")
-  emailVerified          Boolean        @default(false) @map("email_verified")
-  verificationCode       String?        @map("verification_code")
-  verificationCodeExpiry DateTime?      @map("verification_code_expiry")
-  verificationCodeSentAt DateTime?      @map("verification_code_sent_at")
-  createdAt              DateTime       @default(now()) @map("created_at")
-  updatedAt              DateTime       @updatedAt @map("updated_at")
+  countryOfResidence     String?   @map("country_of_residence")
+  isPremium              Boolean   @default(false) @map("is_premium")
+  premiumSince           DateTime? @map("premium_since")
+  newsletterStudy        Boolean   @default(false) @map("newsletter_study")
+  newsletterTourism      Boolean   @default(false) @map("newsletter_tourism")
+  emailVerified          Boolean   @default(false) @map("email_verified")
+  verificationCode       String?   @map("verification_code")
+  verificationCodeExpiry DateTime? @map("verification_code_expiry")
+  verificationCodeSentAt DateTime? @map("verification_code_sent_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
 
   // Relations
   bookings      UserBooking[]
@@ -71,13 +71,13 @@ model UserLanguage {
 }
 
 model Category {
-  id          String    @id
+  id          String   @id
   name        String
   description String?
   icon        String?
-  isPublic    Boolean   @default(true) @map("is_public")
-  order       Int       @default(0)
-  createdAt   DateTime  @default(now()) @map("created_at")
+  isPublic    Boolean  @default(true) @map("is_public")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
 
   // Relations
   services      Service[]
@@ -91,12 +91,12 @@ model Category {
 /// les flottants fausseraient les remises dégressives, et Stripe travaille en centimes.
 /// Valeurs initiales à 0 — les tarifs sont saisis par l'admin (aucun montant inventé).
 model PricingConfig {
-  id                            Int      @id @default(1)
-  pricePerSubcategoryCents      Int      @default(0) @map("price_per_subcategory_cents")
-  discountTwoCategoriesPct      Int      @default(0) @map("discount_two_categories_pct")
-  discountThreePlusCategoriesPct Int     @default(0) @map("discount_three_plus_categories_pct")
-  currency                      String   @default("EUR")
-  updatedAt                     DateTime @updatedAt @map("updated_at")
+  id                             Int      @id @default(1)
+  pricePerSubcategoryCents       Int      @default(0) @map("price_per_subcategory_cents")
+  discountTwoCategoriesPct       Int      @default(0) @map("discount_two_categories_pct")
+  discountThreePlusCategoriesPct Int      @default(0) @map("discount_three_plus_categories_pct")
+  currency                       String   @default("EUR")
+  updatedAt                      DateTime @updatedAt @map("updated_at")
 
   @@map("pricing_config")
 }
@@ -179,18 +179,18 @@ model Subcategory {
 }
 
 model Service {
-  id            Int      @id @default(autoincrement())
-  name          String // clé de catalogue, alignée sur Subcategory.name et les clés front
-  displayName   String?  @map("display_name") // libellé affiché quand il diffère de la clé
-  description   String?
-  image         String?
-  learnMoreLink String?  @map("learn_more_link")
-  translationKey String? @map("translation_key")
-  isExternal    Boolean  @default(false) @map("is_external") // redirige vers une plateforme partenaire
-  deliveryMode  String   @default("online") @map("delivery_mode") // "online"|"physical"|"hybrid"
-  order         Int      @default(0)
-  categoryId    String   @map("category_id")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id             Int      @id @default(autoincrement())
+  name           String // clé de catalogue, alignée sur Subcategory.name et les clés front
+  displayName    String?  @map("display_name") // libellé affiché quand il diffère de la clé
+  description    String?
+  image          String?
+  learnMoreLink  String?  @map("learn_more_link")
+  translationKey String?  @map("translation_key")
+  isExternal     Boolean  @default(false) @map("is_external") // redirige vers une plateforme partenaire
+  deliveryMode   String   @default("online") @map("delivery_mode") // "online"|"physical"|"hybrid"
+  order          Int      @default(0)
+  categoryId     String   @map("category_id")
+  createdAt      DateTime @default(now()) @map("created_at")
 
   // Relations
   category Category      @relation(fields: [categoryId], references: [id])
@@ -232,11 +232,11 @@ model Country {
 }
 
 model CountryQuickFact {
-  id        Int    @id @default(autoincrement())
-  countryId Int    @map("country_id")
-  title     String
-  value     String
-  order     Int    @default(0)
+  id           Int    @id @default(autoincrement())
+  countryId    Int    @map("country_id")
+  title        String
+  value        String
+  order        Int    @default(0)
   // { fr: { title, value }, de: { title, value } }
   translations Json?
 
@@ -248,12 +248,12 @@ model CountryQuickFact {
 }
 
 model CountryTradition {
-  id          Int     @id @default(autoincrement())
-  countryId   Int     @map("country_id")
-  name        String
-  description String?
-  image       String?
-  order       Int     @default(0)
+  id           Int     @id @default(autoincrement())
+  countryId    Int     @map("country_id")
+  name         String
+  description  String?
+  image        String?
+  order        Int     @default(0)
   // { fr: { name, description }, de: { name, description } }
   translations Json?
 
@@ -265,12 +265,12 @@ model CountryTradition {
 }
 
 model CountryCuisine {
-  id          Int     @id @default(autoincrement())
-  countryId   Int     @map("country_id")
-  name        String
-  description String?
-  image       String?
-  order       Int     @default(0)
+  id           Int     @id @default(autoincrement())
+  countryId    Int     @map("country_id")
+  name         String
+  description  String?
+  image        String?
+  order        Int     @default(0)
   // { fr: { name, description }, de: { name, description } }
   translations Json?
 
@@ -282,12 +282,12 @@ model CountryCuisine {
 }
 
 model CountryPlace {
-  id          Int     @id @default(autoincrement())
-  countryId   Int     @map("country_id")
-  name        String
-  description String?
-  image       String?
-  order       Int     @default(0)
+  id           Int     @id @default(autoincrement())
+  countryId    Int     @map("country_id")
+  name         String
+  description  String?
+  image        String?
+  order        Int     @default(0)
   // { fr: { name, description }, de: { name, description } }
   translations Json?
 
@@ -299,10 +299,10 @@ model CountryPlace {
 }
 
 model CountryTrend {
-  id        Int    @id @default(autoincrement())
-  countryId Int    @map("country_id")
-  trendText String @map("trend_text")
-  order     Int    @default(0)
+  id           Int    @id @default(autoincrement())
+  countryId    Int    @map("country_id")
+  trendText    String @map("trend_text")
+  order        Int    @default(0)
   // { fr: { trendText }, de: { trendText } }
   translations Json?
 
@@ -334,21 +334,21 @@ model News {
 }
 
 model Blog {
-  id          Int      @id @default(autoincrement())
-  title       String
-  slug        String?  @unique
-  body        String?
-  excerpt     String?
-  category    String?
-  scope       String?
-  subcategory String?
-  author      String?
-  imageUrl    String?  @map("image_url")
-  publishedAt DateTime @default(now()) @map("published_at")
-  isPublished Boolean  @default(false) @map("is_published")
+  id           Int      @id @default(autoincrement())
+  title        String
+  slug         String?  @unique
+  body         String?
+  excerpt      String?
+  category     String?
+  scope        String?
+  subcategory  String?
+  author       String?
+  imageUrl     String?  @map("image_url")
+  publishedAt  DateTime @default(now()) @map("published_at")
+  isPublished  Boolean  @default(false) @map("is_published")
   translations Json?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("blog")
 }
@@ -449,7 +449,7 @@ model Accommodation {
   name          String
   country       String
   city          String
-  type          String   // "studio"|"shared"|"residence"|"homestay"
+  type          String // "studio"|"shared"|"residence"|"homestay"
   pricePerMonth Float    @map("price_per_month")
   currency      String   @default("EUR")
   contact       String?
@@ -468,8 +468,8 @@ model LanguageCenter {
   name      String
   country   String
   city      String?
-  language  String   // vocabulaire FR, cohérent avec UserLanguage/requiredLanguage (ex. « Anglais »)
-  levels    String?  // niveaux enseignés, ex. « A1-C1 » (info d'affichage)
+  language  String // vocabulaire FR, cohérent avec UserLanguage/requiredLanguage (ex. « Anglais »)
+  levels    String? // niveaux enseignés, ex. « A1-C1 » (info d'affichage)
   link      String?
   isPartner Boolean  @default(false) @map("is_partner")
   createdAt DateTime @default(now()) @map("created_at")
@@ -485,8 +485,8 @@ model LanguageCenter {
 model TourismProgram {
   id          Int      @id @default(autoincrement())
   title       String
-  subcategory String   // « safari » | « sport » | ...
-  country     String   // destination fixe
+  subcategory String // « safari » | « sport » | ...
+  country     String // destination fixe
   city        String?
   description String?
   itinerary   String?
@@ -540,19 +540,19 @@ model Partner {
 
 // Epic 7 — Espace voyage & gestion des trips.
 model Trip {
-  id             Int      @id @default(autoincrement())
-  userId         Int      @map("user_id")
+  id             Int       @id @default(autoincrement())
+  userId         Int       @map("user_id")
   title          String
-  status         String   @default("planning") // « planning » | « upcoming » | « completed »
+  status         String    @default("planning") // « planning » | « upcoming » | « completed »
   startDate      DateTime? @map("start_date")
   endDate        DateTime? @map("end_date")
   lastReminderAt DateTime? @map("last_reminder_at") // idempotence des emails de rappel (7.5)
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
-  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  destinations  TripDestination[]
-  services      TripService[]
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destinations   TripDestination[]
+  services       TripService[]
   checklistItems TripChecklistItem[]
 
   @@index([userId])
@@ -580,7 +580,7 @@ model TripService {
   id            Int      @id @default(autoincrement())
   tripId        Int      @map("trip_id")
   destinationId Int?     @map("destination_id")
-  type          String   // « flight » | « accommodation » | « visa » | « insurance » | « bank » | « language » ...
+  type          String // « flight » | « accommodation » | « visa » | « insurance » | « bank » | « language » ...
   label         String
   status        String   @default("pending") // « pending » | « done »
   data          Json?
@@ -616,7 +616,7 @@ model ContactMessage {
   name        String
   email       String
   subject     String?
-  category    String?  // id de Category (arbre des sujets 8.2)
+  category    String? // id de Category (arbre des sujets 8.2)
   subcategory String?
   message     String
   userId      Int?     @map("user_id") // null => visiteur non connecté
@@ -647,12 +647,12 @@ model NewsletterSubscriber {
 model OrientationResource {
   id          Int      @id @default(autoincrement())
   title       String
-  type        String   // « guide » | « book » | « company » | « certification »
-  category    String?  // domaine (ex. « informatique »)
+  type        String // « guide » | « book » | « company » | « certification »
+  category    String? // domaine (ex. « informatique »)
   description String?
-  provider    String?  // organisme / éditeur
+  provider    String? // organisme / éditeur
   link        String?
-  location    String?  // lieu de la formation — PREMIUM ONLY
+  location    String? // lieu de la formation — PREMIUM ONLY
   imageUrl    String?  @map("image_url")
   isValidated Boolean  @default(true) @map("is_validated")
   order       Int      @default(0)
@@ -667,7 +667,7 @@ model OrientationResource {
 model Notification {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")
-  type      String   // "visa_alert"|"newsletter"|"trip_reminder"
+  type      String // "visa_alert"|"newsletter"|"trip_reminder"
   title     String
   message   String
   isRead    Boolean  @default(false) @map("is_read")
@@ -705,17 +705,17 @@ model UserBooking {
 }
 
 model University {
-  id             Int      @id @default(autoincrement())
-  name           String   @unique
-  city           String
-  website        String?
-  applicationUrl String?  @map("application_url")
-  specialty      String?
-  country        String   @default("Germany")
+  id                    Int      @id @default(autoincrement())
+  name                  String   @unique
+  city                  String
+  website               String?
+  applicationUrl        String?  @map("application_url")
+  specialty             String?
+  country               String   @default("Germany")
   // Story 5.3 : exigence de langue (nom de langue + niveau CEFR A1..C2), nullable.
-  requiredLanguage      String? @map("required_language")
-  requiredLanguageLevel String? @map("required_language_level")
-  createdAt      DateTime @default(now()) @map("created_at")
+  requiredLanguage      String?  @map("required_language")
+  requiredLanguageLevel String?  @map("required_language_level")
+  createdAt             DateTime @default(now()) @map("created_at")
 
   // Relations
   programs UniversityProgram[]
@@ -727,7 +727,7 @@ model UniversityProgram {
   id           Int      @id @default(autoincrement())
   universityId Int      @map("university_id")
   name         String
-  level        String   // "Bachelor" or "Master"
+  level        String // "Bachelor" or "Master"
   createdAt    DateTime @default(now()) @map("created_at")
 
   // Relations
@@ -735,4 +735,251 @@ model UniversityProgram {
 
   @@unique([universityId, name, level], map: "uq_university_program_universityId_name_level")
   @@map("university_programs")
+}
+
+// ─── Catalogue « annuaire » — remplace les listes en dur du front ─────────────
+// Ces tables alimentent les pages vols, assurances, banques, sites, restaurants,
+// hébergements tourisme, jobs, formations et démarches administratives, qui
+// affichaient jusqu'ici des constantes `mock*` côté React.
+// Contrat commun : `isActive` masque une entrée sans la supprimer (l'admin ne perd
+// rien), et les listes multi-valeurs sont des Json (tableaux de chaînes) pour rester
+// éditables depuis le CRUD générique de l'admin.
+
+model Flight {
+  id          Int      @id @default(autoincrement())
+  airline     String
+  fromCountry String   @map("from_country")
+  fromCity    String   @map("from_city")
+  toCountry   String   @map("to_country")
+  toCity      String   @map("to_city")
+  departure   String
+  arrival     String
+  price       String
+  // "Economy" | "Business" | "Economy Premium" pour le grand public,
+  // "Student Basic" | "Student Flex" | "Student Special" pour l'espace étudiant.
+  type        String
+  audience    String   @default("general") // "general" | "student"
+  duration    String?
+  stops       Int      @default(0)
+  baggage     String?
+  features    Json?
+  image       String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([audience])
+  @@index([fromCountry])
+  @@index([toCountry])
+  @@map("flights")
+}
+
+model InsurancePlan {
+  id             Int      @id @default(autoincrement())
+  provider       String
+  country        String
+  // "general" (page Assurances) | "student" (espace études) | "travel" (espace tourisme)
+  audience       String   @default("general")
+  coverageTypes  Json?    @map("coverage_types")
+  benefits       Json?
+  insuranceTypes Json?    @map("insurance_types")
+  monthlyPremium String?  @map("monthly_premium")
+  coverage       String?
+  rating         Float?
+  reviews        Int?
+  image          String?
+  description    String?
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([audience])
+  @@index([country])
+  @@map("insurance_plans")
+}
+
+model Bank {
+  id          Int      @id @default(autoincrement())
+  name        String
+  country     String
+  image       String?
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  accountTypes BankAccountType[]
+
+  @@index([country])
+  @@map("banks")
+}
+
+// Un compte proposé par une banque. Table séparée car une banque en propose
+// plusieurs et la page les affiche en onglets.
+model BankAccountType {
+  id              Int      @id @default(autoincrement())
+  bankId          Int      @map("bank_id")
+  name            String
+  features        Json?
+  monthlyFee      String?  @map("monthly_fee")
+  requirements    Json?
+  minimumDeposit  String?  @map("minimum_deposit")
+  cardType        String?  @map("card_type")
+  withdrawalLimit String?  @map("withdrawal_limit")
+  onlineBanking   Boolean  @default(true) @map("online_banking")
+  studentPerks    Json?    @map("student_perks")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  bank Bank @relation(fields: [bankId], references: [id], onDelete: Cascade)
+
+  @@index([bankId])
+  @@map("bank_account_types")
+}
+
+model TouristSite {
+  id          Int      @id @default(autoincrement())
+  name        String
+  country     String
+  city        String?
+  // Libellé affiché tel quel (« Paris, France ») ; `country`/`city` servent aux filtres.
+  location    String
+  category    String // "Landmarks" | "Historical" | "Religious Sites" | "Museums" | "Parks" | "Entertainment"
+  description String?
+  rating      Float?
+  reviews     Int?
+  price       String?
+  features    Json?
+  image       String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([country])
+  @@index([category])
+  @@map("tourist_sites")
+}
+
+model Restaurant {
+  id         Int      @id @default(autoincrement())
+  name       String
+  country    String
+  city       String?
+  location   String
+  cuisine    String
+  priceRange String   @map("price_range") // "€" | "€€" | "€€€" | "€€€€"
+  rating     Float?
+  reviews    Int?
+  features   Json?
+  image      String?
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([country])
+  @@index([cuisine])
+  @@map("restaurants")
+}
+
+// Distinct de `Accommodation` (story 5.6), qui est le logement étudiant au mois :
+// ici c'est l'hébergement touristique, tarifé à la nuit et noté par les voyageurs.
+model TourismAccommodation {
+  id          Int      @id @default(autoincrement())
+  name        String
+  country     String
+  city        String
+  type        String // "Hotel" | "Resort" | "Apartment" | "Guesthouse" | "Hostel"
+  priceRange  String   @map("price_range")
+  amenities   Json?
+  rating      Float?
+  reviews     Int?
+  description String?
+  image       String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([country])
+  @@index([city])
+  @@map("tourism_accommodations")
+}
+
+model Job {
+  id           Int       @id @default(autoincrement())
+  title        String
+  company      String
+  country      String
+  city         String?
+  location     String
+  type         String // "Full-time" | "Part-time" | "Contract" | "Internship" | "Remote"
+  salary       String?
+  experience   String?
+  description  String?
+  requirements Json?
+  benefits     Json?
+  applyUrl     String?   @map("apply_url")
+  image        String?
+  // Date de publication : le front l'affiche en « il y a X jours » (date-fns).
+  postedAt     DateTime? @map("posted_at")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@index([country])
+  @@index([type])
+  @@map("jobs")
+}
+
+model Training {
+  id            Int      @id @default(autoincrement())
+  provider      String
+  country       String
+  city          String?
+  course        String
+  duration      String?
+  price         String?
+  certification String?
+  category      String? // "Technology" | "Healthcare" | "Business" | ...
+  rating        Float?
+  reviews       Int?
+  features      Json?
+  image         String?
+  description   String?
+  link          String?
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([country])
+  @@index([category])
+  @@map("trainings")
+}
+
+// Prestataire de démarches administratives. Les trois pages (visa travail,
+// légalisation de documents, reconnaissance de diplôme) partagent la même fiche :
+// un prestataire, un pays, un délai, un prix, des pièces à fournir. `serviceType`
+// dit laquelle des trois l'affiche, et les champs spécifiques restent nullables.
+model ServiceProvider {
+  id              Int      @id @default(autoincrement())
+  provider        String
+  country         String
+  serviceType     String   @map("service_type") // "work_visa" | "legalization" | "recognition"
+  services        Json?
+  visaTypes       Json?    @map("visa_types") // serviceType = "work_visa"
+  acceptedDegrees Json?    @map("accepted_degrees") // serviceType = "recognition"
+  documentTypes   Json?    @map("document_types") // serviceType = "legalization"
+  processingTime  String?  @map("processing_time")
+  price           String?
+  requirements    Json?
+  features        Json?
+  successRate     String?  @map("success_rate")
+  rating          Float?
+  link            String?
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([serviceType])
+  @@index([country])
+  @@map("service_providers")
 }
