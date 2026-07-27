@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getAuthWithRole, isAdmin } from "@/lib/auth";
 import { corsJson, corsOptions } from "@/lib/cors";
-import { NewsModel } from "@/src/models/News";
+import { NewsModel, newsPayload } from "@/src/models/News";
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -13,22 +13,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const articleId = parseInt(id);
     if (isNaN(articleId)) return corsJson({ error: "Invalid id" }, { status: 400 });
 
-    const body = await request.json();
-    const { title, body: newsBody, category, image_url, published_at, translations } = body;
-
-    const article = await NewsModel.update(articleId, {
-      title,
-      body: newsBody,
-      description: body.description,
-      category,
-      scope: body.scope,
-      subcategory: body.subcategory,
-      imageUrl: image_url,
-      // Story 11.2 : validation d'un brouillon (scrappé) = publication.
-      isPublished: body.is_published ?? body.isPublished,
-      publishedAt: published_at ? new Date(published_at) : undefined,
-      translations,
-    });
+    // Payload partiel : les champs absents restent `undefined` et Prisma ne les touche pas.
+    // Story 11.2 : la validation d'un brouillon scrappé n'envoie que `is_published`.
+    const article = await NewsModel.update(articleId, newsPayload(await request.json()));
 
     if (!article) return corsJson({ error: "Article not found" }, { status: 404 });
 

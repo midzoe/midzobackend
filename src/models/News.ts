@@ -43,6 +43,51 @@ function formatNews(n: any) {
   };
 }
 
+/**
+ * Normalise le corps d'une requête admin vers `CreateNewsData`.
+ *
+ * L'admin envoie du snake_case aligné sur `formatNews` (`image`, `title_fr`,
+ * `is_published`…), le scraping et d'anciens appels envoient `image_url` /
+ * `published_at`. On accepte les deux et on laisse `undefined` là où le champ
+ * est absent, pour qu'un PUT partiel n'écrase pas les colonnes non fournies.
+ *
+ * L'allemand n'a pas de colonne dédiée (cf. schema) : `title_de` /
+ * `description_de` sont fusionnés dans `translations.de`, là où le front les lit.
+ */
+export function newsPayload(b: any): Partial<CreateNewsData> {
+  const pick = (...keys: string[]) => keys.map((k) => b[k]).find((v) => v !== undefined);
+
+  const de: Record<string, string> = {};
+  const titleDe = pick("title_de", "titleDe");
+  const descriptionDe = pick("description_de", "descriptionDe");
+  if (titleDe) de.title = titleDe;
+  if (descriptionDe) de.description = descriptionDe;
+
+  const existingTranslations = b.translations as Record<string, unknown> | undefined;
+  const translations =
+    Object.keys(de).length > 0
+      ? { ...(existingTranslations ?? {}), de: { ...((existingTranslations?.de as object) ?? {}), ...de } }
+      : existingTranslations;
+
+  const publishedAt = pick("published_at", "publishedAt", "date");
+
+  return {
+    title: b.title,
+    titleFr: pick("title_fr", "titleFr"),
+    body: b.body,
+    description: b.description,
+    descriptionFr: pick("description_fr", "descriptionFr"),
+    category: b.category,
+    scope: b.scope,
+    subcategory: b.subcategory,
+    imageUrl: pick("image_url", "imageUrl", "image"),
+    link: b.link,
+    publishedAt: publishedAt ? new Date(publishedAt) : undefined,
+    isPublished: pick("is_published", "isPublished"),
+    translations,
+  };
+}
+
 export class NewsModel {
   static async findAll(page = 1, limit = 20, filters: NewsFilters = {}) {
     const skip = (page - 1) * limit;
