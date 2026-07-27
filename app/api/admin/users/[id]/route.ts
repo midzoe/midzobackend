@@ -29,14 +29,43 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     let user;
     if (is_premium !== undefined) {
       // handle premium separately
+      const current = await prisma.user.findUnique({
+        where: { id: targetId },
+        select: { isPremium: true, premiumSince: true },
+      });
       await prisma.user.update({
         where: { id: targetId },
         data: {
           isPremium: is_premium,
-          premiumSince: is_premium ? new Date() : null,
+          // On ne réécrit la date que sur un vrai passage en premium : rééditer
+          // une autre colonne ne doit pas faire perdre l'ancienneté du client.
+          premiumSince: is_premium ? (current?.premiumSince ?? new Date()) : null,
         },
       });
     }
+
+    // Champs de profil éditables par l'admin (fiche utilisateur détaillée).
+    const profile: any = {};
+    for (const [key, column] of [
+      ["first_name", "firstName"],
+      ["last_name", "lastName"],
+      ["phone", "phone"],
+      ["nationality", "nationality"],
+      ["country_of_residence", "countryOfResidence"],
+    ] as const) {
+      if (body[key] !== undefined) profile[column] = body[key] === "" ? null : body[key];
+    }
+    for (const [key, column] of [
+      ["newsletter_study", "newsletterStudy"],
+      ["newsletter_tourism", "newsletterTourism"],
+      ["email_verified", "emailVerified"],
+    ] as const) {
+      if (body[key] !== undefined) profile[column] = Boolean(body[key]);
+    }
+    if (Object.keys(profile).length > 0) {
+      await prisma.user.update({ where: { id: targetId }, data: profile });
+    }
+
     user = await UserModel.adminUpdate(targetId, { email, password, role });
     if (!user) return corsJson({ error: "User not found" }, { status: 404 });
 
