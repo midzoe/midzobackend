@@ -12,7 +12,9 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ slug: 
       ? await BlogModel.findBySlug(slug)
       : await BlogModel.findById(numericId);
 
-    if (!post) return corsJson({ error: "Post not found" }, { status: 404 });
+    // Route publique : un brouillon ne doit pas fuiter par devinette de slug ou d'id.
+    // La liste publique filtre déjà sur isPublished ; l'accès direct doit s'aligner.
+    if (!post || !post.is_published) return corsJson({ error: "Post not found" }, { status: 404 });
 
     return corsJson({ success: true, data: post });
   } catch (error) {

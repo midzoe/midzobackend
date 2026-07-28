@@ -9,7 +9,9 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     if (isNaN(newsId)) return corsJson({ error: "Invalid id" }, { status: 400 });
 
     const article = await NewsModel.findById(newsId);
-    if (!article) return corsJson({ error: "Article not found" }, { status: 404 });
+    // Route publique : un brouillon (dont les articles scrappés d'Epic 11, créés avec
+    // isPublished=false) ne doit pas fuiter par simple devinette d'identifiant.
+    if (!article || !article.is_published) return corsJson({ error: "Article not found" }, { status: 404 });
 
     return corsJson({ success: true, data: article });
   } catch (error) {
