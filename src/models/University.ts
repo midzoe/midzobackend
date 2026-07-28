@@ -15,6 +15,9 @@ export interface CreateUniversityData {
   // Story 5.3 : exigence de langue (nom de langue + niveau CEFR A1..C2).
   requiredLanguage?: string;
   requiredLanguageLevel?: string;
+  // Story 5.13 : profil d'admission (note plancher publiée + conditions de dossier).
+  minimumGrade?: string;
+  admissionRequirements?: string;
 }
 
 export interface CreateProgramData {

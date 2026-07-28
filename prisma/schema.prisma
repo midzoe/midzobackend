@@ -715,6 +715,13 @@ model University {
   // Story 5.3 : exigence de langue (nom de langue + niveau CEFR A1..C2), nullable.
   requiredLanguage      String?  @map("required_language")
   requiredLanguageLevel String?  @map("required_language_level")
+  // Story 5.13 : profil d'admission. Les systèmes de notation diffèrent d'un pays à
+  // l'autre (mention au bac, GPA /4.0, A-levels, Numerus Clausus, Gaokao…) : on
+  // stocke donc la note plancher telle qu'elle se publie, en texte, plutôt qu'un
+  // nombre qui n'aurait pas la même signification d'un pays à l'autre.
+  minimumGrade          String?  @map("minimum_grade")
+  // Sélectivité et conditions de dossier en clair (concours, entretien, portfolio…).
+  admissionRequirements String?  @map("admission_requirements")
   createdAt             DateTime @default(now()) @map("created_at")
 
   // Relations

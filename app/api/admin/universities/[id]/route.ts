@@ -24,6 +24,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       specialty: body.specialty,
       requiredLanguage: body.requiredLanguage,
       requiredLanguageLevel: body.requiredLanguageLevel,
+      // Story 5.13 : profil d'admission.
+      minimumGrade: body.minimumGrade,
+      admissionRequirements: body.admissionRequirements,
     });
 
     if (!data) return corsJson({ error: "University not found" }, { status: 404 });

@@ -41,6 +41,9 @@ export async function POST(request: NextRequest) {
       specialty,
       requiredLanguage,
       requiredLanguageLevel,
+      // Story 5.13 : profil d'admission.
+      minimumGrade: body.minimumGrade,
+      admissionRequirements: body.admissionRequirements,
     });
 
     return corsJson({ success: true, data }, { status: 201 });
