@@ -10,6 +10,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx src/scripts/seed-universities.ts",
     "db:seed:directory": "tsx src/scripts/seed-directory.ts",
+    "db:seed:language-centers": "tsx src/scripts/seed-language-centers.ts",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate"

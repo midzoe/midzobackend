@@ -2,17 +2,29 @@ import { NextRequest } from "next/server";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { LanguageCenterModel } from "@/src/models/LanguageCenter";
 
-// Story 5.4 : endpoint public — filtre par langue et/ou pays (insensible à la casse).
+/**
+ * Story 5.4 (filtres langue/pays), enrichie story 5.14.
+ *
+ * Liste publique : seules les fiches validées sortent (gate Epic 9). Les filtres sont
+ * cumulables et insensibles à la casse ; `country` attend le vocabulaire anglais du
+ * catalogue universités (« Germany »), `language` le vocabulaire français (« Allemand »),
+ * ce qui permet la redirection ?language=&country= depuis une fiche université.
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const language = searchParams.get("language") ?? undefined;
-    const country = searchParams.get("country") ?? undefined;
+    const get = (key: string) => searchParams.get(key)?.trim() || undefined;
 
-    const items =
-      language || country
-        ? await LanguageCenterModel.findFiltered({ language, country })
-        : await LanguageCenterModel.findAll();
+    const items = await LanguageCenterModel.findFiltered({
+      language: get("language"),
+      country: get("country"),
+      city: get("city"),
+      level: get("level"),
+      courseType: get("course_type") ?? get("courseType"),
+      exam: get("exam"),
+      onlyPartners: searchParams.get("partners") === "true",
+      q: get("q"),
+    });
 
     return corsJson({ success: true, data: items, total: items.length });
   } catch (error) {

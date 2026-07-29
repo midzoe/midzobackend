@@ -464,19 +464,50 @@ model Accommodation {
 // Story 5.4 : centres de langue (potentiels partenaires), cibles de redirection quand
 // l'étudiant n'atteint pas l'exigence de langue d'une université (5.3 → UI 5.8).
 model LanguageCenter {
-  id        Int      @id @default(autoincrement())
-  name      String
-  country   String
-  city      String?
-  language  String // vocabulaire FR, cohérent avec UserLanguage/requiredLanguage (ex. « Anglais »)
-  levels    String? // niveaux enseignés, ex. « A1-C1 » (info d'affichage)
-  link      String?
-  isPartner Boolean  @default(false) @map("is_partner")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id       Int     @id @default(autoincrement())
+  name     String
+  // `country` reprend le vocabulaire **anglais** de University.country (« Germany »,
+  // « France »…) : la redirection depuis une université passe ?country=<University.country>,
+  // les deux catalogues doivent donc parler la même langue.
+  country  String
+  city     String?
+  language String // vocabulaire FR, cohérent avec UserLanguage/requiredLanguage (ex. « Anglais »)
+  levels   String? // résumé d'affichage des niveaux, ex. « A1-C1 » (dérivé de levelsOffered)
+  link     String?
+
+  // Fiche détaillée (story 5.14) : ce qu'un étudiant doit savoir avant de s'inscrire.
+  description        String?
+  address            String?
+  email              String?
+  phone              String?
+  registrationUrl    String?  @map("registration_url")
+  image              String?
+  levelsOffered      String[] @map("levels_offered") // CEFR A1..C2 (ou HSK 1..6 pour le chinois)
+  courseTypes        String[] @map("course_types") // « Intensif », « En ligne », « Cours du soir »…
+  examsPrepared      String[] @map("exams_prepared") // « TestDaF », « IELTS », « DELF »…
+  accreditations     String[] // « Eaquals », « IALC », « Bildungsurlaub »…
+  universityPartners String[] @map("university_partners") // universités partenaires (noms libres)
+  // Tarif **indicatif** : un centre publie rarement un prix unique, d'où l'unité explicite.
+  priceFrom          Float?   @map("price_from")
+  priceUnit          String?  @map("price_unit") // « semaine » | « mois » | « cours » | « heure »
+  currency           String   @default("EUR")
+  weeklyHours        Int?     @map("weekly_hours")
+  classSize          Int?     @map("class_size")
+  startDates         String?  @map("start_dates") // « Rentrées chaque lundi », « Sessions mensuelles »…
+
+  offersVisaSupport   Boolean @default(false) @map("offers_visa_support") // lettre d'inscription pour le visa
+  offersAccommodation Boolean @default(false) @map("offers_accommodation")
+  offersPathway       Boolean @default(false) @map("offers_pathway") // Studienkolleg / année préparatoire universitaire
+
+  isPartner   Boolean  @default(false) @map("is_partner")
+  // Gate de publication (cohérent avec Epic 9) : la liste publique ne sert que le validé.
+  isValidated Boolean  @default(false) @map("is_validated")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@index([language])
   @@index([country])
+  @@index([isValidated])
   @@map("language_centers")
 }
 
