@@ -11,12 +11,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params;
     const eid = parseInt(id);
     if (isNaN(eid)) return corsJson({ error: "Invalid id" }, { status: 400 });
-    const b = await request.json();
-    const item = await TourismEventModel.update(eid, {
-      title: b.title, description: b.description, country: b.country, city: b.city,
-      location: b.location, startDate: b.start_date ?? b.startDate, status: b.status,
-      link: b.link, imageUrl: b.image_url ?? b.imageUrl, isPublished: b.is_published ?? b.isPublished,
-    });
+    const body = await request.json();
+    // Mise à jour partielle : le titre peut être omis, jamais vidé.
+    if (body.title !== undefined && !String(body.title).trim()) {
+      return corsJson({ error: "title cannot be empty" }, { status: 400 });
+    }
+
+    const item = await TourismEventModel.update(eid, body);
     if (!item) return corsJson({ error: "Not found" }, { status: 404 });
     return corsJson({ success: true, data: item });
   } catch (error) {

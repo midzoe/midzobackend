@@ -538,18 +538,50 @@ model TourismEvent {
   id          Int       @id @default(autoincrement())
   title       String
   description String?
+  // `country` reprend le nom anglais de TourismCountry.name : c'est ce qui rattache
+  // l'événement au plan annuel du pays (quota d'événements par pays et par an).
   country     String?
   city        String?
   location    String?
   startDate   DateTime? @map("start_date")
-  status      String    @default("upcoming") // « published » | « upcoming »
+  status      String    @default("upcoming") // « proposed » | « upcoming » | « past »
   link        String?
   imageUrl    String?   @map("image_url")
   isPublished Boolean   @default(false) @map("is_published")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
 
+  // Story 6.8 : programmation annuelle par pays et aide à la décision.
+  subcategory    String? // « Safari », « Sport », « Festival », « Culture »…
+  // Année de programmation : un événement peut être proposé avant que sa date exacte
+  // soit connue, `year` porte donc le plan et `startDate` reste nullable.
+  year           Int?
+  endDate        DateTime? @map("end_date")
+  // Faux tant que la date n'est pas confirmée par une source officielle : l'admin voit
+  // d'un coup d'œil ce qui reste à vérifier avant publication.
+  datesConfirmed Boolean   @default(false) @map("dates_confirmed")
+  priceFrom      Float?    @map("price_from")
+  currency       String    @default("EUR")
+  capacity       Int?
+  audience       String? // « Familles », « Jeunes actifs », « Groupes »…
+  offerIncludes  String[]  @map("offer_includes") // « Vol », « Hébergement », « Transferts », « Billetterie »
+  highlights     String[]
+  internalNotes  String?   @map("internal_notes") // aide à la décision, jamais servie au public
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([country])
+  @@index([year])
   @@map("tourism_events")
+}
+
+/// Story 6.8 : réglages éditoriaux modifiables depuis l'admin (clé/valeur en texte).
+/// Premier usage : le nombre d'événements attendus par pays de tourisme et par an.
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
 }
 
 // Story 6.3 : partenaires (redirection trackée pour le tourisme global).
