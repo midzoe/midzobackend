@@ -1,3 +1,4 @@
+export * from './AppSetting';
 export * from './Bank';
 export * from './ContactMessage';
 export * from './Embassy';
