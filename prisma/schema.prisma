@@ -407,23 +407,70 @@ model TourismCountry {
   @@map("tourism_countries")
 }
 
+/// Fiche visa d'une route « pays d'origine (Afrique) → pays de destination ».
+/// Story 4.7 : la fiche ne répond plus seulement « visa requis oui/non » — elle porte
+/// tout ce qu'une personne doit savoir et fournir pour l'obtenir : le dossier
+/// obligatoire, les conditions personnelles à prouver (ressources, langue, assurance…),
+/// la procédure de dépôt et les motifs de refus fréquents.
+/// Une route peut porter plusieurs fiches, une par type de visa (étudiant, tourisme…).
 model Visa {
   id                 Int      @id @default(autoincrement())
   originCountry      String   @map("origin_country")
   destinationCountry String   @map("destination_country")
+  visaType           String   @default("Étudiant") @map("visa_type")
   visaRequired       Boolean  @default(true) @map("visa_required")
-  visaType           String?  @map("visa_type")
-  processingTime     String?  @map("processing_time")
-  cost               Float?
-  documentsRequired  Json?    @map("documents_required")
-  notes              String?
   embassyId          Int?     @map("embassy_id")
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  // ── Coûts & délais ────────────────────────────────────────────────────────
+  processingTime String? @map("processing_time")
+  cost           Float?
+  currency       String? @default("EUR")
+  visaValidity   String? @map("visa_validity") // ex. « 1 an renouvelable »
+  entriesType    String? @map("entries_type")  // « Entrée simple » | « Entrées multiples »
+  maxStay        String? @map("max_stay")      // ex. « 90 jours par semestre »
+
+  // ── Dossier obligatoire ───────────────────────────────────────────────────
+  documentsRequired  Json?   @map("documents_required") // string[]
+  passportValidity   String? @map("passport_validity")  // ex. « valide 3 mois après le retour »
+  photoSpec          String? @map("photo_spec")         // ex. « 35x45 mm, fond blanc, < 6 mois »
+  applicationFormUrl String? @map("application_form_url")
+
+  // ── Conditions personnelles à prouver ─────────────────────────────────────
+  fundsAmount             String? @map("funds_amount")     // ex. « 11 904 € sur compte bloqué »
+  proofOfFunds            String? @map("proof_of_funds")   // forme acceptée du justificatif
+  accommodationProof      String? @map("accommodation_proof")
+  insuranceRequired       Boolean @default(false) @map("insurance_required")
+  insuranceMinCoverage    String? @map("insurance_min_coverage")
+  languageRequirement     String? @map("language_requirement") // ex. « B2 (DELF/TCF) »
+  admissionLetterRequired Boolean @default(false) @map("admission_letter_required")
+  guarantorRequired       Boolean @default(false) @map("guarantor_required")
+  criminalRecordRequired  Boolean @default(false) @map("criminal_record_required")
+  medicalExamRequired     Boolean @default(false) @map("medical_exam_required")
+  vaccinations            String? @map("vaccinations")
+  returnTicketRequired    Boolean @default(false) @map("return_ticket_required")
+
+  // ── Procédure de dépôt ────────────────────────────────────────────────────
+  whereToApply       String? @map("where_to_apply") // ambassade, VFS Global, TLScontact…
+  appointmentUrl     String? @map("appointment_url")
+  biometricsRequired Boolean @default(false) @map("biometrics_required")
+  interviewRequired  Boolean @default(false) @map("interview_required")
+  applicationSteps   Json?   @map("application_steps") // string[] ordonné
+
+  // ── À savoir ──────────────────────────────────────────────────────────────
+  commonRefusalReasons Json?     @map("common_refusal_reasons") // string[]
+  notes                String?
+  officialSourceUrl    String?   @map("official_source_url")
+  lastVerifiedAt       DateTime? @map("last_verified_at")
+
+  // Gate publique (9.2 / FR37) : une fiche non validée reste invisible côté site.
+  isValidated Boolean  @default(false) @map("is_validated")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   embassy Embassy? @relation(fields: [embassyId], references: [id], onDelete: SetNull)
 
-  @@unique([originCountry, destinationCountry])
+  @@unique([originCountry, destinationCountry, visaType])
+  @@index([destinationCountry])
   @@map("visas")
 }
 

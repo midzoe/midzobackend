@@ -43,12 +43,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // `pricePerMonth` est un Float Prisma : un formulaire envoie une chaîne, à convertir
+    // ici (le PUT le fait déjà) sinon la création échoue en 500.
+    const price = Number(price_per_month);
+    if (!Number.isFinite(price)) {
+      return corsJson({ error: "price_per_month must be a number" }, { status: 400 });
+    }
+
     const accommodation = await AccommodationModel.create({
       name,
       country,
       city,
       type,
-      pricePerMonth: price_per_month,
+      pricePerMonth: price,
       currency,
       contact,
       description,

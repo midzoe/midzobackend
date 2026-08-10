@@ -57,11 +57,21 @@ function buildVisaMessage(params: {
   return msg;
 }
 
+/** Liste JSON stockée en base → tableau de chaînes (tolère l'absence et le format libre). */
+function asList(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(v => String(v)).filter(Boolean);
+  if (typeof value === "string" && value.trim()) {
+    return value.split(/\r?\n|,/).map(v => v.trim()).filter(Boolean);
+  }
+  return [];
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const nationality = searchParams.get("nationality");
     const destination = searchParams.get("destination");
+    const visaType = searchParams.get("type");
     const lang = searchParams.get("lang") === "fr" ? "fr" : "en";
 
     if (!nationality || !destination) {
@@ -71,7 +81,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const visaInfo = await VisaModel.findByRoute(nationality, destination);
+    // Gate 9.2 / FR37 : une fiche non validée ne guide pas un dossier réel.
+    const visaInfo = await VisaModel.findByRoutePublic(nationality, destination, visaType);
 
     const visaRequired: boolean | null = visaInfo?.visaRequired ?? null;
     const processingTime = visaInfo?.processingTime ?? null;
@@ -120,6 +131,55 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Story 4.7 : la fiche complète — ce que la personne doit savoir et fournir pour
+    // obtenir le visa. Regroupée par thème pour que le site l'affiche telle quelle.
+    const requirements = visaInfo
+      ? {
+          visaType: visaInfo.visaType,
+          costs: {
+            cost: visaInfo.cost,
+            currency: visaInfo.currency,
+            processingTime: visaInfo.processingTime,
+            visaValidity: visaInfo.visaValidity,
+            entriesType: visaInfo.entriesType,
+            maxStay: visaInfo.maxStay,
+          },
+          documents: {
+            list: asList(visaInfo.documentsRequired),
+            passportValidity: visaInfo.passportValidity,
+            photoSpec: visaInfo.photoSpec,
+            applicationFormUrl: visaInfo.applicationFormUrl,
+          },
+          personal: {
+            fundsAmount: visaInfo.fundsAmount,
+            proofOfFunds: visaInfo.proofOfFunds,
+            accommodationProof: visaInfo.accommodationProof,
+            insuranceRequired: visaInfo.insuranceRequired,
+            insuranceMinCoverage: visaInfo.insuranceMinCoverage,
+            languageRequirement: visaInfo.languageRequirement,
+            admissionLetterRequired: visaInfo.admissionLetterRequired,
+            guarantorRequired: visaInfo.guarantorRequired,
+            criminalRecordRequired: visaInfo.criminalRecordRequired,
+            medicalExamRequired: visaInfo.medicalExamRequired,
+            vaccinations: visaInfo.vaccinations,
+            returnTicketRequired: visaInfo.returnTicketRequired,
+          },
+          procedure: {
+            whereToApply: visaInfo.whereToApply,
+            appointmentUrl: visaInfo.appointmentUrl,
+            biometricsRequired: visaInfo.biometricsRequired,
+            interviewRequired: visaInfo.interviewRequired,
+            steps: asList(visaInfo.applicationSteps),
+          },
+          goodToKnow: {
+            commonRefusalReasons: asList(visaInfo.commonRefusalReasons),
+            notes: visaInfo.notes,
+            officialSourceUrl: visaInfo.officialSourceUrl,
+            lastVerifiedAt: visaInfo.lastVerifiedAt,
+          },
+        }
+      : null;
+
     // Champs conservés pour rétro-compatibilité + nouveaux champs (visaRequired, message, embassy).
     const warnings: string[] = [];
     if (visaRequired) warnings.push("Visa required — apply before departure.");
@@ -135,13 +195,15 @@ export async function GET(request: NextRequest) {
       visaRequired,
       message,
       embassy,
+      // Story 4.7 : fiche détaillée
+      requirements,
       // Story 4.4 : indique si une alerte premium a été créée à cette évaluation
       alertCreated,
       // Rétro-compatibilité
       visa_required: visaRequired,
       travel_advisory: visaInfo?.notes ?? null,
       estimated_cost: visaInfo?.cost ?? null,
-      documents_needed: (visaInfo?.documentsRequired as string[]) ?? [],
+      documents_needed: asList(visaInfo?.documentsRequired),
       warnings,
     });
   } catch (error) {
