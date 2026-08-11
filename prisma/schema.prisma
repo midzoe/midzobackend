@@ -475,19 +475,38 @@ model Visa {
 }
 
 model Embassy {
-  id        Int      @id @default(autoincrement())
-  country   String
-  name      String
-  location  String?
-  link      String?
-  email     String?
-  phone     String?
+  id       Int    @id @default(autoincrement())
+  /// Pays REPRÉSENTÉ par la mission (« France » pour l'ambassade de France à Lomé).
+  /// C'est ce que contrôle le gate d'une fiche visa : mission.country == destination.
+  country  String
+  name     String
+  location String?
+  link     String?
+  email    String?
+  phone    String?
+
+  // ── Story 4.8 : où se trouve réellement la mission, et qui elle dessert ──────
+  /// Pays d'ACCUEIL : « Togo » pour l'ambassade de France à Lomé.
+  hostCountry String? @map("host_country")
+  city        String?
+  address     String?
+  /// Lien cartographique (recherche Google Maps à défaut d'une adresse exacte).
+  mapsUrl     String? @map("maps_url")
+  /// « Ambassade » | « Consulat général » | « Section consulaire » | « Centre de dépôt ».
+  type        String? @default("Ambassade")
+  /// Pays desservis EN PLUS du pays d'accueil, quand la destination n'a pas de
+  /// représentation sur place (l'ambassade de Suède à Abuja couvre le Togo).
+  coveredCountries String[] @map("covered_countries")
+  /// Gate de publication : une mission non vérifiée n'est pas montrée au public.
+  isValidated      Boolean  @default(false) @map("is_validated")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   visas Visa[]
 
   @@index([country])
+  @@index([hostCountry])
   @@map("embassies")
 }
 

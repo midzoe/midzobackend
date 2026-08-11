@@ -3,7 +3,9 @@ import { corsJson, corsOptions } from "@/lib/cors";
 import { authenticateRequest } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { VisaModel } from "@/src/models/Visa";
+import { EmbassyModel } from "@/src/models/Embassy";
 import { NotificationModel } from "@/src/models/Notification";
+import { countryFrom, countryThe } from "@/lib/country-labels";
 
 type EmbassyBlock = {
   id: number;
@@ -13,7 +15,34 @@ type EmbassyBlock = {
   link: string | null;
   email: string | null;
   phone: string | null;
+  // Story 4.8 : où se trouve la mission et pourquoi c'est elle qui est compétente.
+  type: string | null;
+  hostCountry: string | null;
+  city: string | null;
+  address: string | null;
+  mapsUrl: string | null;
+  /** true si la mission est dans un AUTRE pays que celui du demandeur. */
+  isAbroad: boolean;
 } | null;
+
+function toEmbassyBlock(e: any, origin: string): EmbassyBlock {
+  if (!e) return null;
+  return {
+    id: e.id,
+    country: e.country,
+    name: e.name,
+    location: e.location,
+    link: e.link,
+    email: e.email,
+    phone: e.phone,
+    type: e.type,
+    hostCountry: e.hostCountry,
+    city: e.city,
+    address: e.address,
+    mapsUrl: e.mapsUrl,
+    isAbroad: !!e.hostCountry && e.hostCountry !== origin,
+  };
+}
 
 // Story 4.3 : message en langage naturel, localisé FR/EN. `lang` non-`fr` → `en`.
 function buildVisaMessage(params: {
@@ -26,20 +55,25 @@ function buildVisaMessage(params: {
 }): string {
   const { lang, visaRequired, nationality, destination, processingTime, embassy } = params;
   const fr = lang === "fr";
+  // Les noms sont stockés en anglais : sans ces libellés, la phrase française
+  // donnait « un voyage de Senegal vers United Kingdom ».
+  const from = countryFrom(nationality);
+  const to = countryThe(destination);
 
+  let msg: string;
   if (visaRequired === null) {
-    return fr
-      ? `Aucune information de visa n'est disponible pour un voyage de ${nationality} vers ${destination}.`
+    msg = fr
+      ? `Aucune information de visa n'est disponible pour un départ ${from} vers ${to}.`
       : `No visa information is available for travel from ${nationality} to ${destination}.`;
-  }
-
-  let msg = visaRequired
-    ? fr
-      ? `Un visa est requis pour voyager de ${nationality} vers ${destination}.`
-      : `A visa is required to travel from ${nationality} to ${destination}.`
-    : fr
-      ? `Aucun visa n'est requis pour voyager de ${nationality} vers ${destination}.`
+  } else if (visaRequired) {
+    msg = fr
+      ? `Un visa est requis pour un départ ${from} vers ${to}.`
+      : `A visa is required to travel from ${nationality} to ${destination}.`;
+  } else {
+    msg = fr
+      ? `Aucun visa n'est requis pour un départ ${from} vers ${to}.`
       : `No visa is required to travel from ${nationality} to ${destination}.`;
+  }
 
   if (visaRequired && processingTime) {
     msg += fr
@@ -47,11 +81,22 @@ function buildVisaMessage(params: {
       : ` Estimated processing time: ${processingTime}.`;
   }
 
+  // La mission compétente est annoncée même sans fiche visa : savoir où s'adresser
+  // reste utile, et le déplacement à l'étranger doit être signalé dans tous les cas.
   if (embassy) {
-    const where = embassy.location ? ` (${embassy.location})` : "";
-    msg += fr
-      ? ` Adressez-vous à ${embassy.name}${where}.`
-      : ` Contact ${embassy.name}${where}.`;
+    const where = embassy.city ?? embassy.location;
+    const place = where ? ` (${where}${embassy.isAbroad && embassy.hostCountry ? `, ${countryFrom(embassy.hostCountry).replace(/^d[eu']\s?/, "")}` : ""})` : "";
+    if (embassy.isAbroad) {
+      // Pas de représentation sur place : le dire, sinon la personne cherche dans son
+      // pays une adresse qui n'existe pas — ou se déplace sans l'avoir anticipé.
+      msg += fr
+        ? ` Il n'y a pas de représentation dans votre pays : le dossier est traité par ${embassy.name}${place}, compétente pour votre pays — prévoyez le déplacement.`
+        : ` There is no mission in your country: your file is handled by ${embassy.name}${place} — plan to travel there.`;
+    } else {
+      msg += fr
+        ? ` Adressez-vous à ${embassy.name}${place}.`
+        : ` Contact ${embassy.name}${place}.`;
+    }
   }
 
   return msg;
@@ -87,17 +132,16 @@ export async function GET(request: NextRequest) {
     const visaRequired: boolean | null = visaInfo?.visaRequired ?? null;
     const processingTime = visaInfo?.processingTime ?? null;
 
-    const embassy: EmbassyBlock = visaInfo?.embassy
-      ? {
-          id: visaInfo.embassy.id,
-          country: visaInfo.embassy.country,
-          name: visaInfo.embassy.name,
-          location: visaInfo.embassy.location,
-          link: visaInfo.embassy.link,
-          email: visaInfo.embassy.email,
-          phone: visaInfo.embassy.phone,
-        }
-      : null;
+    // Story 4.8 : l'ambassade compétente dépend du couple (origine, destination).
+    // On respecte le rattachement explicite de la fiche s'il existe, sinon on résout
+    // par le catalogue : mission installée dans le pays du demandeur, à défaut celle
+    // qui déclare le desservir. Le gate ne laisse passer que les missions vérifiées.
+    const linked = visaInfo?.embassy;
+    const resolved =
+      linked && linked.isValidated
+        ? linked
+        : await EmbassyModel.findCompetent(destination, nationality);
+    const embassy = toEmbassyBlock(resolved, nationality);
 
     const message = buildVisaMessage({
       lang,

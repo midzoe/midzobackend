@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getAuthWithRole, isAdmin } from "@/lib/auth";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { EmbassyModel } from "@/src/models/Embassy";
+import { embassyPayload } from "@/lib/embassy-input";
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -13,18 +14,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const embassyId = parseInt(id);
     if (isNaN(embassyId)) return corsJson({ error: "Invalid id" }, { status: 400 });
 
-    const body = await request.json();
-    const { country, name, location, link, email, phone } = body;
-
-    const embassy = await EmbassyModel.update(embassyId, {
-      country,
-      name,
-      location,
-      link,
-      email,
-      phone,
-    });
-
+    const embassy = await EmbassyModel.update(embassyId, embassyPayload(await request.json()));
     if (!embassy) return corsJson({ error: "Embassy not found" }, { status: 404 });
 
     return corsJson({ success: true, embassy });
