@@ -13,6 +13,10 @@ const prisma = new PrismaClient();
  * (« Germany », « United Kingdom »…), qui est aussi la valeur envoyée par le filtre pays
  * de l'écran public (`StudentAccommodation`) alimenté par `useCountries`.
  *
+ * Volume : **12 fiches par pays**, réparties sur plusieurs villes universitaires et sur les
+ * quatre types (résidence / studio / colocation / famille d'accueil), pour que le filtre
+ * ville ou type de l'écran public renvoie toujours quelque chose.
+ *
  * Ce qui est **vérifiable** ici : l'organisme (œuvre universitaire, opérateur de
  * résidences, plateforme de colocation), sa ville, son site officiel, son mode
  * d'attribution.
@@ -44,6 +48,78 @@ const catalog: Block[] = [
     country: 'United Kingdom',
     currency: 'GBP',
     places: [
+      {
+        name: 'Student Roost',
+        city: 'Leeds',
+        type: 'residence',
+        pricePerMonth: 700,
+        contact: 'https://www.studentroost.co.uk',
+        description:
+          "Réseau national de résidences étudiantes couvrant une vingtaine de villes britanniques, avec chambres en suite et studios, charges et wifi compris. Leeds concentre plus de 60 000 étudiants pour des loyers très inférieurs à Londres.",
+      },
+      {
+        name: 'Fresh Student Living',
+        city: 'Sheffield',
+        type: 'residence',
+        pricePerMonth: 620,
+        contact: 'https://www.freshstudentliving.co.uk',
+        description:
+          "Résidences privées implantées près des campus de Sheffield, avec des contrats de 44 ou 51 semaines. Sheffield figure régulièrement parmi les villes étudiantes les moins chères du Royaume-Uni.",
+      },
+      {
+        name: 'University of Glasgow — Résidences universitaires',
+        city: 'Glasgow',
+        type: 'residence',
+        pricePerMonth: 720,
+        contact: 'https://www.gla.ac.uk',
+        description:
+          "Logement universitaire garanti aux étudiants internationaux de première année qui candidatent avant la date limite. Chambres en suite ou partagées, charges incluses, sur le campus ou à proximité immédiate.",
+      },
+      {
+        name: 'University of Cambridge — Colleges',
+        city: 'Cambridge',
+        type: 'residence',
+        pricePerMonth: 900,
+        contact: 'https://www.cam.ac.uk',
+        description:
+          "À Cambridge, le logement passe par le college d'affectation, qui héberge la quasi-totalité de ses étudiants pendant la durée du cursus. Aucune recherche sur le marché privé n'est nécessaire à l'arrivée.",
+      },
+      {
+        name: 'Vita Student',
+        city: 'Bristol',
+        type: 'studio',
+        pricePerMonth: 1050,
+        contact: 'https://www.vitastudent.com',
+        description:
+          "Studios tout inclus (charges, ménage des parties communes, salle de sport, salles d'étude) au cœur de Bristol. Segment haut de gamme, à mettre en regard du budget d'une chambre en maison partagée.",
+      },
+      {
+        name: 'Collegiate UK',
+        city: 'Nottingham',
+        type: 'studio',
+        pricePerMonth: 800,
+        contact: 'https://www.collegiate-ac.com',
+        description:
+          "Studios meublés avec cuisine privative dans les grandes villes universitaires anglaises. Nottingham, avec ses deux universités, offre un marché étudiant abondant et des loyers modérés.",
+      },
+      {
+        name: 'Rightmove — colocation étudiante',
+        city: 'Leeds',
+        type: 'shared',
+        pricePerMonth: 500,
+        contact: 'https://www.rightmove.co.uk',
+        description:
+          "Premier portail immobilier britannique, utilisé pour trouver une chambre en maison partagée via une agence. Les groupes d'étudiants signent un bail commun pour l'année entière, souvent dès février pour la rentrée suivante.",
+      },
+      {
+        name: "Homestay.com — famille d'accueil",
+        city: 'Cardiff',
+        type: 'homestay',
+        pricePerMonth: 550,
+        contact: 'https://www.homestay.com',
+        description:
+          "Chambre chez l'habitant à Cardiff, capitale galloise où le coût de la vie est nettement inférieur à celui du Sud-Est anglais. Formule adaptée à une première année ou à un semestre d'échange.",
+      },
       {
         name: 'Unite Students',
         city: 'London',
@@ -89,6 +165,78 @@ const catalog: Block[] = [
     currency: 'USD',
     places: [
       {
+        name: 'New York University — Residence Halls',
+        city: 'New York',
+        type: 'residence',
+        pricePerMonth: 1800,
+        contact: 'https://www.nyu.edu',
+        description:
+          "Résidences universitaires réparties dans Manhattan et Brooklyn, attribuées par tirage au sort après la première année. Le logement sur le campus reste la seule option abordable pour un étudiant international à New York.",
+      },
+      {
+        name: 'University of Michigan — Residence Halls',
+        city: 'Ann Arbor',
+        type: 'residence',
+        pricePerMonth: 1100,
+        contact: 'https://housing.umich.edu',
+        description:
+          "Logement garanti aux étudiants de première année sur l'un des plus grands campus publics du pays. Le tarif est facturé par semestre et inclut un plan repas, à intégrer au budget global.",
+      },
+      {
+        name: 'Purdue University — Residence Halls',
+        city: 'West Lafayette',
+        type: 'residence',
+        pricePerMonth: 900,
+        contact: 'https://www.purdue.edu',
+        description:
+          "Campus du Midwest réputé en ingénierie, avec un coût de logement parmi les plus bas des grandes universités publiques américaines. Chambres doubles ou simples, contrat calé sur l'année académique.",
+      },
+      {
+        name: 'University of Texas at Austin — On-campus housing',
+        city: 'Austin',
+        type: 'residence',
+        pricePerMonth: 1200,
+        contact: 'https://housing.utexas.edu',
+        description:
+          "Résidences universitaires sur le campus d'Austin, avec plan repas inclus dans la plupart des formules. La demande dépasse largement l'offre : candidater dès la confirmation d'admission.",
+      },
+      {
+        name: 'Greystar Student Living',
+        city: 'Chicago',
+        type: 'studio',
+        pricePerMonth: 1250,
+        contact: 'https://www.greystar.com',
+        description:
+          "Résidences privées meublées gérées par l'un des premiers opérateurs immobiliers américains, implantées près des grands campus urbains. Bail individuel par chambre et charges généralement incluses.",
+      },
+      {
+        name: 'Craigslist — colocation étudiante',
+        city: 'Seattle',
+        type: 'shared',
+        pricePerMonth: 1100,
+        contact: 'https://www.craigslist.org',
+        description:
+          "Petites annonces de référence aux États-Unis pour la chambre en appartement partagé. Ne jamais verser de dépôt avant d'avoir visité ou fait visiter par un tiers de confiance : les arnaques y sont fréquentes.",
+      },
+      {
+        name: 'Roommates.com — recherche de colocataires',
+        city: 'San Francisco',
+        type: 'shared',
+        pricePerMonth: 1400,
+        contact: 'https://www.roommates.com',
+        description:
+          "Plateforme de mise en relation entre colocataires, avec profils vérifiés. Utile sur la baie de San Francisco, où le loyer d'un logement individuel dépasse le budget de la plupart des étudiants.",
+      },
+      {
+        name: "Homestay.com — famille d'accueil",
+        city: 'San Diego',
+        type: 'homestay',
+        pricePerMonth: 1100,
+        contact: 'https://www.homestay.com',
+        description:
+          "Chambre chez l'habitant en Californie du Sud, souvent avec petit-déjeuner. Solution privilégiée pour un programme de langue ou un premier semestre, sans dépôt de garantie ni cosignataire américain.",
+      },
+      {
         name: 'Boston University — Residence Halls',
         city: 'Boston',
         type: 'residence',
@@ -132,6 +280,78 @@ const catalog: Block[] = [
     country: 'Canada',
     currency: 'CAD',
     places: [
+      {
+        name: 'UBC — Student Housing',
+        city: 'Vancouver',
+        type: 'residence',
+        pricePerMonth: 1100,
+        contact: 'https://vancouver.housing.ubc.ca',
+        description:
+          "Le plus grand parc de logements universitaires du Canada, sur le campus de Point Grey. Place garantie aux étudiants internationaux de première année qui répondent dans les délais à l'offre d'admission.",
+      },
+      {
+        name: 'McGill — Résidences universitaires',
+        city: 'Montréal',
+        type: 'residence',
+        pricePerMonth: 1150,
+        contact: 'https://www.mcgill.ca',
+        description:
+          "Résidences du campus du centre-ville, garanties aux nouveaux étudiants de premier cycle. Formules avec plan repas obligatoire en résidence traditionnelle, ou en appartement pour les cycles supérieurs.",
+      },
+      {
+        name: 'Université Laval — Résidences',
+        city: 'Québec',
+        type: 'residence',
+        pricePerMonth: 550,
+        contact: 'https://www.residences.ulaval.ca',
+        description:
+          "Chambres sur le campus de Sainte-Foy à l'un des tarifs les plus bas du pays, avec accès direct au réseau de tunnels souterrains l'hiver. Priorité aux étudiants internationaux à leur arrivée.",
+      },
+      {
+        name: 'University of Alberta — Residence',
+        city: 'Edmonton',
+        type: 'residence',
+        pricePerMonth: 800,
+        contact: 'https://www.ualberta.ca',
+        description:
+          "Résidences universitaires d'Edmonton, dans une province où le coût du logement reste très inférieur à Toronto et Vancouver. Chambres et appartements meublés, contrats de 8 ou 12 mois.",
+      },
+      {
+        name: 'Rentals.ca — studio meublé',
+        city: 'Calgary',
+        type: 'studio',
+        pricePerMonth: 1300,
+        contact: 'https://rentals.ca',
+        description:
+          "Portail national de location, utile pour un studio meublé hors campus. Prévoir un dépôt d'un demi-mois de loyer et, à défaut d'historique de crédit canadien, plusieurs mois payés d'avance.",
+      },
+      {
+        name: 'Places4Students',
+        city: 'Ottawa',
+        type: 'shared',
+        pricePerMonth: 800,
+        contact: 'https://www.places4students.com',
+        description:
+          "Service de logement hors campus référencé par de nombreuses universités canadiennes : chambres en colocation et recherche de colocataires, filtrées par établissement.",
+      },
+      {
+        name: 'Canada Homestay Network',
+        city: 'Vancouver',
+        type: 'homestay',
+        pricePerMonth: 1100,
+        contact: 'https://www.canadahomestaynetwork.ca',
+        description:
+          "Familles d'accueil sélectionnées et suivies en Colombie-Britannique, repas inclus. Alternative crédible au marché locatif de Vancouver, le plus tendu du pays.",
+      },
+      {
+        name: "Homestay.com — famille d'accueil",
+        city: 'Ottawa',
+        type: 'homestay',
+        pricePerMonth: 900,
+        contact: 'https://www.homestay.com',
+        description:
+          "Chambre chez l'habitant dans la capitale fédérale, ville bilingue et bien desservie. Formule d'atterrissage utile avant de signer un bail d'un an, la norme en Ontario.",
+      },
       {
         name: 'University of Toronto — Résidences universitaires',
         city: 'Toronto',
@@ -177,6 +397,78 @@ const catalog: Block[] = [
     currency: 'EUR',
     places: [
       {
+        name: 'Studierendenwerk Frankfurt am Main',
+        city: 'Frankfurt',
+        type: 'residence',
+        pricePerMonth: 380,
+        contact: 'https://www.studentenwerkfrankfurt.de',
+        description:
+          "Œuvre universitaire de Francfort et de la région Rhin-Main : cités universitaires à loyer encadré dans une ville où le marché privé est tiré par le secteur bancaire. Candidature en ligne dès l'admission.",
+      },
+      {
+        name: 'Studierendenwerk Heidelberg',
+        city: 'Heidelberg',
+        type: 'residence',
+        pricePerMonth: 340,
+        contact: 'https://www.stw.uni-heidelberg.de',
+        description:
+          "Places en Wohnheim pour les étudiants de la plus ancienne université d'Allemagne. Ville étudiante compacte où la cité universitaire évite un marché privé restreint et cher.",
+      },
+      {
+        name: 'Studierendenwerk Dresden',
+        city: 'Dresden',
+        type: 'residence',
+        pricePerMonth: 280,
+        contact: 'https://www.studentenwerk-dresden.de',
+        description:
+          "L'un des parcs de logement étudiant les plus abordables d'Allemagne, dans une grande ville universitaire de l'Est. Les délais d'attente y sont sensiblement plus courts qu'à Munich ou Berlin.",
+      },
+      {
+        name: 'Studierendenwerk Aachen',
+        city: 'Aachen',
+        type: 'residence',
+        pricePerMonth: 320,
+        contact: 'https://www.studierendenwerk-aachen.de',
+        description:
+          "Cités universitaires d'Aix-la-Chapelle, ville d'ingénieurs adossée à la RWTH. Position frontalière avec la Belgique et les Pays-Bas, loyers nettement inférieurs à la moyenne ouest-allemande.",
+      },
+      {
+        name: 'Studierendenwerk Stuttgart',
+        city: 'Stuttgart',
+        type: 'residence',
+        pricePerMonth: 400,
+        contact: 'https://www.studierendenwerk-stuttgart.de',
+        description:
+          "Logements étudiants publics dans la capitale du Bade-Wurtemberg. Le marché privé y est tendu par l'industrie automobile : la place en Wohnheim est décisive pour tenir le budget.",
+      },
+      {
+        name: 'THE FIZZ',
+        city: 'Berlin',
+        type: 'studio',
+        pricePerMonth: 700,
+        contact: 'https://www.the-fizz.com',
+        description:
+          "Studios meublés tout inclus à Berlin, réservables en ligne depuis l'étranger et sans garant allemand. Option de repli quand la liste d'attente du Studierendenwerk dépasse la rentrée.",
+      },
+      {
+        name: 'WG-Gesucht — colocation (WG)',
+        city: 'Leipzig',
+        type: 'shared',
+        pricePerMonth: 350,
+        contact: 'https://www.wg-gesucht.de',
+        description:
+          "Chambre en colocation à Leipzig, ville étudiante en forte croissance où les loyers restent parmi les plus bas des grandes villes allemandes. Sélection par entretien avec les colocataires.",
+      },
+      {
+        name: "Homestay.com — famille d'accueil",
+        city: 'Bonn',
+        type: 'homestay',
+        pricePerMonth: 450,
+        contact: 'https://www.homestay.com',
+        description:
+          "Chambre chez l'habitant à Bonn, ville universitaire à taille humaine sur le Rhin. Immersion linguistique utile avant un cursus enseigné en allemand.",
+      },
+      {
         name: 'Studierendenwerk Berlin',
         city: 'Berlin',
         type: 'residence',
@@ -220,6 +512,78 @@ const catalog: Block[] = [
     country: 'France',
     currency: 'EUR',
     places: [
+      {
+        name: 'Crous de Lyon — Résidences universitaires',
+        city: 'Lyon',
+        type: 'residence',
+        pricePerMonth: 350,
+        contact: 'https://www.crous-lyon.fr',
+        description:
+          "Logement public à loyer encadré dans la deuxième ville étudiante de France. Réservation en ligne via Trouver un logement, ouverte l'été aux étudiants internationaux non boursiers.",
+      },
+      {
+        name: 'Crous de Bordeaux Aquitaine — Résidences universitaires',
+        city: 'Bordeaux',
+        type: 'residence',
+        pricePerMonth: 340,
+        contact: 'https://www.crous-bordeaux.fr',
+        description:
+          "Résidences universitaires du campus de Talence-Pessac-Gradignan, l'un des plus vastes de France. Chambres rénovées et studios, éligibles aux APL.",
+      },
+      {
+        name: 'Crous de Montpellier — Résidences universitaires',
+        city: 'Montpellier',
+        type: 'residence',
+        pricePerMonth: 330,
+        contact: 'https://www.crous-montpellier.fr',
+        description:
+          "Ville où l'étudiant représente près d'un habitant sur cinq : l'offre Crous y est dense, mais la demande sature dès juillet. Déposer le dossier dès l'admission.",
+      },
+      {
+        name: 'Cité internationale universitaire de Paris',
+        city: 'Paris',
+        type: 'residence',
+        pricePerMonth: 550,
+        contact: 'https://www.ciup.fr',
+        description:
+          "Campus de 43 maisons dans le 14e arrondissement, dédié aux étudiants et chercheurs internationaux. Admission sur dossier académique, avec un brassage de nationalités que le marché privé parisien n'offre pas.",
+      },
+      {
+        name: 'Les Estudines',
+        city: 'Paris',
+        type: 'studio',
+        pricePerMonth: 750,
+        contact: 'https://www.estudines.com',
+        description:
+          "Résidences étudiantes privées du groupe Réside Études, en Île-de-France et en région : studios meublés éligibles aux APL, services inclus. Garant exigé, Visale accepté.",
+      },
+      {
+        name: 'Cardinal Campus',
+        city: 'Lyon',
+        type: 'studio',
+        pricePerMonth: 620,
+        contact: 'https://www.cardinalcampus.fr',
+        description:
+          "Opérateur lyonnais de résidences étudiantes : studios meublés avec espaces communs, dans plusieurs villes de la région. Baux de 9 ou 12 mois selon le calendrier universitaire.",
+      },
+      {
+        name: 'La Carte des Colocs — colocation',
+        city: 'Nantes',
+        type: 'shared',
+        pricePerMonth: 420,
+        contact: 'https://www.lacartedescolocs.fr',
+        description:
+          "Plateforme française dédiée à la colocation, avec recherche cartographique par quartier. Nantes combine un marché étudiant important et des loyers inférieurs à Paris ou Lyon.",
+      },
+      {
+        name: 'Leboncoin — colocation étudiante',
+        city: 'Rennes',
+        type: 'shared',
+        pricePerMonth: 400,
+        contact: 'https://www.leboncoin.fr',
+        description:
+          "Premier site d'annonces entre particuliers en France, très utilisé pour la chambre en colocation. Ne verser aucun acompte avant la signature d'un bail et la visite du logement.",
+      },
       {
         name: 'Crous de Paris — Résidences universitaires',
         city: 'Paris',
@@ -266,6 +630,78 @@ const catalog: Block[] = [
     places: [
       {
         name: 'DUWO',
+        city: 'Leiden',
+        type: 'residence',
+        pricePerMonth: 520,
+        contact: 'https://www.duwo.nl',
+        description:
+          "Logements réservés aux étudiants internationaux de l'université de Leyde, attribués en amont de la rentrée via l'établissement. Chambres meublées, contrat calé sur le semestre ou l'année.",
+      },
+      {
+        name: 'SSH Student Housing',
+        city: 'Nijmegen',
+        type: 'residence',
+        pricePerMonth: 430,
+        contact: 'https://www.sshxl.nl',
+        description:
+          "Chambres étudiantes à Nimègue, ville universitaire du sud-est où les loyers restent contenus. Contingent réservé aux internationaux, attribué avant l'arrivée.",
+      },
+      {
+        name: 'Vestide',
+        city: 'Eindhoven',
+        type: 'residence',
+        pricePerMonth: 450,
+        contact: 'https://www.vestide.nl',
+        description:
+          "Bailleur étudiant d'Eindhoven, partenaire de la TU/e pour le logement des étudiants internationaux. Chambres et studios meublés à proximité du campus.",
+      },
+      {
+        name: 'The Social Hub (ex-The Student Hotel)',
+        city: 'Eindhoven',
+        type: 'studio',
+        pricePerMonth: 850,
+        contact: 'https://www.thesocialhub.co',
+        description:
+          "Studios tout inclus mêlant étudiants, jeunes actifs et voyageurs, avec espaces de coworking et salle de sport. Réservation en ligne au mois, sans garant néerlandais.",
+      },
+      {
+        name: 'Pararius — studio meublé',
+        city: 'Rotterdam',
+        type: 'studio',
+        pricePerMonth: 900,
+        contact: 'https://www.pararius.com',
+        description:
+          "Portail locatif néerlandais en anglais, orienté marché privé. Prévoir un revenu ou un garant représentant trois à quatre fois le loyer, exigence standard des agences.",
+      },
+      {
+        name: 'HousingAnywhere',
+        city: 'Rotterdam',
+        type: 'shared',
+        pricePerMonth: 600,
+        contact: 'https://housinganywhere.com',
+        description:
+          "Plateforme née à Rotterdam pour la réservation de chambres à distance, avec contrat et paiement sécurisés. Conçue pour l'étudiant qui ne peut pas visiter avant son arrivée.",
+      },
+      {
+        name: 'Kamernet — colocation',
+        city: 'Maastricht',
+        type: 'shared',
+        pricePerMonth: 500,
+        contact: 'https://kamernet.nl',
+        description:
+          "Chambre en colocation à Maastricht, ville la plus internationale du pays rapportée à sa taille. La sélection passe souvent par une visite collective (hospiteren) organisée par les colocataires.",
+      },
+      {
+        name: "Homestay.com — famille d'accueil",
+        city: 'Utrecht',
+        type: 'homestay',
+        pricePerMonth: 550,
+        contact: 'https://www.homestay.com',
+        description:
+          "Chambre chez l'habitant à Utrecht, au centre du pays et à vingt minutes d'Amsterdam en train. Solution de transition face à une pénurie structurelle de logements étudiants.",
+      },
+      {
+        name: 'DUWO',
         city: 'Delft',
         type: 'residence',
         pricePerMonth: 500,
@@ -308,6 +744,78 @@ const catalog: Block[] = [
     country: 'Spain',
     currency: 'EUR',
     places: [
+      {
+        name: 'Colegios Mayores — Universidad Complutense de Madrid',
+        city: 'Madrid',
+        type: 'residence',
+        pricePerMonth: 850,
+        contact: 'https://www.ucm.es',
+        description:
+          "Les colegios mayores de la Complutense combinent hébergement, restauration et vie culturelle sur le campus de Moncloa. Admission sur dossier, avec un fort ancrage associatif propre au modèle espagnol.",
+      },
+      {
+        name: 'Micampus Residencias',
+        city: 'Madrid',
+        type: 'residence',
+        pricePerMonth: 900,
+        contact: 'https://www.micampusresidencia.com',
+        description:
+          "Réseau de résidences privées près des grands campus espagnols, en pension complète ou demi-pension. Réservation en ligne possible depuis l'étranger, sans garant espagnol.",
+      },
+      {
+        name: 'Nexo Residencias',
+        city: 'Sevilla',
+        type: 'residence',
+        pricePerMonth: 750,
+        contact: 'https://www.nexoresidencias.com',
+        description:
+          "Résidences universitaires à Séville et dans d'autres villes espagnoles, avec chambres individuelles et services inclus. Formules à l'année universitaire ou au semestre.",
+      },
+      {
+        name: 'Yugo',
+        city: 'Barcelona',
+        type: 'studio',
+        pricePerMonth: 950,
+        contact: 'https://yugo.com',
+        description:
+          "Opérateur international de résidences étudiantes présent à Barcelone : studios meublés, charges et wifi inclus, espaces communs. Réservation en ligne et contrat en anglais.",
+      },
+      {
+        name: 'Uniplaces — chambre en colocation',
+        city: 'Madrid',
+        type: 'shared',
+        pricePerMonth: 500,
+        contact: 'https://www.uniplaces.com',
+        description:
+          "Réservation à distance d'une chambre meublée à Madrid, contrat signé en ligne avant l'arrivée. Le piso compartido reste le mode de logement le plus courant chez les étudiants espagnols.",
+      },
+      {
+        name: 'Badi — piso compartido',
+        city: 'Barcelona',
+        type: 'shared',
+        pricePerMonth: 550,
+        contact: 'https://badi.com',
+        description:
+          "Plateforme barcelonaise de colocation avec profils vérifiés et paiement du loyer intégré. Marché barcelonais très tendu : viser les quartiers desservis par le métro plutôt que le centre historique.",
+      },
+      {
+        name: 'Idealista — piso compartido',
+        city: 'Granada',
+        type: 'shared',
+        pricePerMonth: 280,
+        contact: 'https://www.idealista.com',
+        description:
+          "Grenade offre parmi les loyers étudiants les plus bas d'Espagne pour une ville universitaire majeure. Chambre en appartement partagé, souvent charges comprises dans le centre.",
+      },
+      {
+        name: "Homestay.com — famille d'accueil",
+        city: 'Salamanca',
+        type: 'homestay',
+        pricePerMonth: 500,
+        contact: 'https://www.homestay.com',
+        description:
+          "Chambre chez l'habitant à Salamanque, référence historique pour l'apprentissage de l'espagnol. Repas souvent inclus et immersion linguistique immédiate.",
+      },
       {
         name: 'Resa — Residencias de Estudiantes',
         city: 'Madrid',
@@ -353,6 +861,78 @@ const catalog: Block[] = [
     currency: 'SEK',
     places: [
       {
+        name: 'Uppsalahem — logement étudiant',
+        city: 'Uppsala',
+        type: 'residence',
+        pricePerMonth: 4500,
+        contact: 'https://www.uppsalahem.se',
+        description:
+          "Bailleur municipal d'Uppsala et principal pourvoyeur de logements étudiants de la ville. Attribution à l'ancienneté dans la file d'attente : s'inscrire le jour de l'admission.",
+      },
+      {
+        name: 'Lund University Accommodation',
+        city: 'Lund',
+        type: 'residence',
+        pricePerMonth: 4600,
+        contact: 'https://www.lunduniversity.lu.se',
+        description:
+          "Contingent de logements réservé par l'université aux étudiants internationaux en échange ou en master, garanti si la demande est déposée dans la fenêtre officielle.",
+      },
+      {
+        name: 'Studentbostäder i Linköping',
+        city: 'Linköping',
+        type: 'residence',
+        pricePerMonth: 4200,
+        contact: 'https://www.studentbostader.se',
+        description:
+          "Parc de logements étudiants de Linköping, ville universitaire technologique du sud de la Suède. Loyers modérés et délais d'attente plus courts qu'à Stockholm.",
+      },
+      {
+        name: 'Bostaden — Umeå',
+        city: 'Umeå',
+        type: 'residence',
+        pricePerMonth: 3800,
+        contact: 'https://www.bostaden.umea.se',
+        description:
+          "Bailleur municipal d'Umeå, dans le nord du pays : l'un des meilleurs rapports offre/demande de Suède pour un étudiant, avec des loyers parmi les plus bas.",
+      },
+      {
+        name: 'KTH Accommodation',
+        city: 'Stockholm',
+        type: 'studio',
+        pricePerMonth: 6000,
+        contact: 'https://www.kth.se',
+        description:
+          "Chambres et studios réservés par l'Institut royal de technologie à ses étudiants internationaux. Offre limitée mais décisive dans une ville où le marché locatif libre est quasi inaccessible.",
+      },
+      {
+        name: 'Boplats Göteborg',
+        city: 'Göteborg',
+        type: 'shared',
+        pricePerMonth: 4200,
+        contact: 'https://www.boplats.se',
+        description:
+          "File d'attente municipale de Göteborg, ouverte aux étudiants pour les chambres et petits logements. Inscription gratuite et ancienneté déterminante dans l'attribution.",
+      },
+      {
+        name: 'Qasa — sous-location',
+        city: 'Stockholm',
+        type: 'shared',
+        pricePerMonth: 6500,
+        contact: 'https://qasa.se',
+        description:
+          "Plateforme suédoise de sous-location encadrée, avec contrat type et loyer sécurisé. Vérifier que le propriétaire ou la coopérative a autorisé la sous-location avant de signer.",
+      },
+      {
+        name: "Homestay.com — famille d'accueil",
+        city: 'Stockholm',
+        type: 'homestay',
+        pricePerMonth: 6000,
+        contact: 'https://www.homestay.com',
+        description:
+          "Chambre chez l'habitant à Stockholm, formule de repli quand la file d'attente du logement étudiant dépasse la date de rentrée.",
+      },
+      {
         name: 'SSSB — Stiftelsen Stockholms Studentbostäder',
         city: 'Stockholm',
         type: 'residence',
@@ -396,6 +976,78 @@ const catalog: Block[] = [
     country: 'Switzerland',
     currency: 'CHF',
     places: [
+      {
+        name: 'ETH Zürich — Wohnen',
+        city: 'Zürich',
+        type: 'residence',
+        pricePerMonth: 750,
+        contact: 'https://ethz.ch',
+        description:
+          "Logements gérés ou référencés par l'École polytechnique fédérale pour ses étudiants et doctorants. Places contingentées et attribuées en priorité aux nouveaux arrivants internationaux.",
+      },
+      {
+        name: 'Universität Basel — Wohnen',
+        city: 'Basel',
+        type: 'residence',
+        pricePerMonth: 700,
+        contact: 'https://www.unibas.ch',
+        description:
+          "Chambres en résidence pour les étudiants de Bâle, ville frontalière avec la France et l'Allemagne. Certains étudiants logent côté français ou allemand, où le loyer est deux fois moindre.",
+      },
+      {
+        name: 'Université de Fribourg — Logements étudiants',
+        city: 'Fribourg',
+        type: 'residence',
+        pricePerMonth: 550,
+        contact: 'https://www.unifr.ch',
+        description:
+          "Logements universitaires dans la seule université bilingue français-allemand de Suisse. Loyers sensiblement inférieurs à ceux de Zurich, Genève et Lausanne.",
+      },
+      {
+        name: 'USI — Alloggi studenti',
+        city: 'Lugano',
+        type: 'residence',
+        pricePerMonth: 700,
+        contact: 'https://www.usi.ch',
+        description:
+          "Logements référencés par l'Università della Svizzera italiana pour ses étudiants, dans le canton italophone du Tessin. Marché plus accessible que sur l'arc lémanique.",
+      },
+      {
+        name: 'Université de Neuchâtel — Logements',
+        city: 'Neuchâtel',
+        type: 'studio',
+        pricePerMonth: 550,
+        contact: 'https://www.unine.ch',
+        description:
+          "Studios et chambres proposés par l'université, dans une ville universitaire à taille humaine au bord du lac. L'une des options les plus abordables de Suisse romande.",
+      },
+      {
+        name: 'Homegate — studio meublé',
+        city: 'Lausanne',
+        type: 'studio',
+        pricePerMonth: 1100,
+        contact: 'https://www.homegate.ch',
+        description:
+          "Premier portail immobilier suisse. Sur le marché privé, prévoir un dossier complet (attestation d'inscription, garant ou caution bancaire) et une caution de trois mois de loyer.",
+      },
+      {
+        name: 'ImmoScout24 — colocation',
+        city: 'Zürich',
+        type: 'shared',
+        pricePerMonth: 800,
+        contact: 'https://www.immoscout24.ch',
+        description:
+          "Annonces de chambres en colocation à Zurich, ville la plus chère du pays. La WG reste le seul montage réaliste pour un budget étudiant sans revenus locaux.",
+      },
+      {
+        name: "Homestay.com — famille d'accueil",
+        city: 'Genève',
+        type: 'homestay',
+        pricePerMonth: 900,
+        contact: 'https://www.homestay.com',
+        description:
+          "Chambre chez l'habitant à Genève, où le marché locatif privé affiche un taux de vacance proche de zéro. Formule de transition pour les premiers mois.",
+      },
       {
         name: 'WOKO — Studentische Wohngenossenschaft',
         city: 'Zürich',
@@ -441,6 +1093,78 @@ const catalog: Block[] = [
     currency: 'EUR',
     places: [
       {
+        name: 'ER.GO — Diritto allo studio Emilia-Romagna',
+        city: 'Bologna',
+        type: 'residence',
+        pricePerMonth: 300,
+        contact: 'https://www.er-go.it',
+        description:
+          "Organisme régional du droit à l'étude : logement à tarif social attribué au concours, sur critères de revenu et de mérite, en même temps que la bourse régionale.",
+      },
+      {
+        name: 'DSU Toscana',
+        city: 'Firenze',
+        type: 'residence',
+        pricePerMonth: 300,
+        contact: 'https://www.dsu.toscana.it',
+        description:
+          "Résidences publiques de Florence, Sienne et Pise. Le dossier de bourse régionale vaut demande de logement : les deux se déposent ensemble, avant l'été.",
+      },
+      {
+        name: 'LazioDisco',
+        city: 'Roma',
+        type: 'residence',
+        pricePerMonth: 280,
+        contact: 'https://www.laziodisco.it',
+        description:
+          "Organisme du droit à l'étude du Latium, qui gère les résidences universitaires publiques de Rome. Places limitées face au nombre d'inscrits : candidater dès l'ouverture du concours.",
+      },
+      {
+        name: 'Camplus',
+        city: 'Milano',
+        type: 'residence',
+        pricePerMonth: 800,
+        contact: 'https://www.camplus.it',
+        description:
+          "Résidence du premier réseau italien de collèges de mérite, à Milan. Services inclus et accompagnement académique, dans la ville la plus chère d'Italie.",
+      },
+      {
+        name: 'Campus X',
+        city: 'Roma',
+        type: 'residence',
+        pricePerMonth: 700,
+        contact: 'https://www.campusx.it',
+        description:
+          "Résidences étudiantes privées à Rome et dans plusieurs villes italiennes : chambres et studios meublés, espaces communs et sportifs, contrat en ligne.",
+      },
+      {
+        name: 'Spotahome — chambre meublée',
+        city: 'Milano',
+        type: 'studio',
+        pricePerMonth: 900,
+        contact: 'https://www.spotahome.com',
+        description:
+          "Plateforme de réservation à distance avec visite vidéo réalisée par ses équipes. Utile à Milan, où les logements partent vite et où le bail exige souvent un garant italien.",
+      },
+      {
+        name: 'Idealista — stanza singola',
+        city: 'Padova',
+        type: 'shared',
+        pricePerMonth: 400,
+        contact: 'https://www.idealista.it',
+        description:
+          "Chambre individuelle en appartement partagé à Padoue, l'une des plus anciennes universités d'Europe. Loyers nettement inférieurs à Milan pour une ville étudiante dense.",
+      },
+      {
+        name: "Homestay.com — famille d'accueil",
+        city: 'Firenze',
+        type: 'homestay',
+        pricePerMonth: 600,
+        contact: 'https://www.homestay.com',
+        description:
+          "Chambre chez l'habitant à Florence, destination majeure des programmes d'échange. Alternative au bail italien, qui réclame garant et codice fiscale.",
+      },
+      {
         name: 'Camplus',
         city: 'Bologna',
         type: 'residence',
@@ -485,6 +1209,78 @@ const catalog: Block[] = [
     currency: 'EUR',
     places: [
       {
+        name: 'SASUP — Universidade do Porto (Residências)',
+        city: 'Porto',
+        type: 'residence',
+        pricePerMonth: 220,
+        contact: 'https://sasup.up.pt',
+        description:
+          "Résidences des services d'action sociale de l'université de Porto, aux tarifs les plus bas de la ville. Places limitées, avec priorité aux boursiers et aux étudiants internationaux en programme d'échange.",
+      },
+      {
+        name: 'SASUC — Universidade de Coimbra (Residências)',
+        city: 'Coimbra',
+        type: 'residence',
+        pricePerMonth: 200,
+        contact: 'https://www.uc.pt',
+        description:
+          "Résidences universitaires publiques de Coimbra, ville où la vie étudiante structure la cité depuis des siècles. Loyers très inférieurs au marché privé local.",
+      },
+      {
+        name: 'SASUM — Universidade do Minho (Residências)',
+        city: 'Braga',
+        type: 'residence',
+        pricePerMonth: 200,
+        contact: 'https://www.sas.uminho.pt',
+        description:
+          "Logements publics sur les campus de Braga et Guimarães, avec restauration universitaire à proximité. L'une des options les plus abordables du pays.",
+      },
+      {
+        name: 'Universidade de Aveiro — Residências',
+        city: 'Aveiro',
+        type: 'residence',
+        pricePerMonth: 220,
+        contact: 'https://www.ua.pt',
+        description:
+          "Résidences sur un campus compact au bord de la ria, à une heure de Porto. Le logement universitaire y couvre une part importante des étudiants inscrits.",
+      },
+      {
+        name: 'Livensa Living',
+        city: 'Lisboa',
+        type: 'studio',
+        pricePerMonth: 800,
+        contact: 'https://www.livensaliving.com',
+        description:
+          "Studios meublés avec espaces communs à Lisbonne, réservables en ligne depuis l'étranger. Segment privé, dans une ville où les loyers ont fortement augmenté ces dernières années.",
+      },
+      {
+        name: 'Smart Studios',
+        city: 'Porto',
+        type: 'studio',
+        pricePerMonth: 650,
+        contact: 'https://www.smartstudios.pt',
+        description:
+          "Studios étudiants meublés à Porto, charges et internet inclus, à proximité des pôles universitaires. Contrats au semestre ou à l'année académique.",
+      },
+      {
+        name: 'Idealista — quarto partilhado',
+        city: 'Lisboa',
+        type: 'shared',
+        pricePerMonth: 450,
+        contact: 'https://www.idealista.pt',
+        description:
+          "Chambre en appartement partagé à Lisbonne, mode de logement le plus courant chez les étudiants. Privilégier les quartiers desservis par le métro plutôt que le centre touristique.",
+      },
+      {
+        name: 'HousingAnywhere',
+        city: 'Lisboa',
+        type: 'shared',
+        pricePerMonth: 500,
+        contact: 'https://housinganywhere.com',
+        description:
+          "Réservation d'une chambre à distance avec contrat en ligne, avant même l'obtention du visa. Le paiement n'est reversé au bailleur qu'après l'emménagement.",
+      },
+      {
         name: 'SAS Universidade de Lisboa — Residências',
         city: 'Lisboa',
         type: 'residence',
@@ -528,6 +1324,78 @@ const catalog: Block[] = [
     country: 'China',
     currency: 'CNY',
     places: [
+      {
+        name: 'Peking University — Résidence internationale',
+        city: 'Beijing',
+        type: 'residence',
+        pricePerMonth: 2500,
+        contact: 'https://www.pku.edu.cn',
+        description:
+          "Dortoirs réservés aux étudiants internationaux sur le campus de Haidian, en chambre simple ou double. Réservation via le bureau des admissions, en même temps que l'inscription.",
+      },
+      {
+        name: 'Shanghai Jiao Tong University — Dortoirs internationaux',
+        city: 'Shanghai',
+        type: 'residence',
+        pricePerMonth: 2600,
+        contact: 'https://www.sjtu.edu.cn',
+        description:
+          "Logement sur le campus de Minhang ou de Xuhui, facturé à la journée. Les places étant limitées, une partie des étudiants se loge en ville dès la deuxième année.",
+      },
+      {
+        name: 'Nanjing University — Résidence internationale',
+        city: 'Nanjing',
+        type: 'residence',
+        pricePerMonth: 1600,
+        contact: 'https://www.nju.edu.cn',
+        description:
+          "Chambres meublées sur le campus de Xianlin, à un niveau de loyer très inférieur à Pékin et Shanghai. Nankin accueille l'une des plus fortes communautés étudiantes du pays.",
+      },
+      {
+        name: 'Wuhan University — Résidence internationale',
+        city: 'Wuhan',
+        type: 'residence',
+        pricePerMonth: 1500,
+        contact: 'https://www.whu.edu.cn',
+        description:
+          "Résidence pour étudiants étrangers sur un campus réputé pour son cadre, au bord du lac de l'Est. Coût de la vie parmi les plus bas des grandes villes universitaires chinoises.",
+      },
+      {
+        name: "Sun Yat-sen University — Résidence internationale",
+        city: 'Guangzhou',
+        type: 'residence',
+        pricePerMonth: 1800,
+        contact: 'https://www.sysu.edu.cn',
+        description:
+          "Dortoirs internationaux à Canton, porte d'entrée du delta de la rivière des Perles. Chambres meublées avec services inclus, réservées via le bureau des étudiants étrangers.",
+      },
+      {
+        name: "Xi'an Jiaotong University — Résidence internationale",
+        city: "Xi'an",
+        type: 'residence',
+        pricePerMonth: 1200,
+        contact: 'https://www.xjtu.edu.cn',
+        description:
+          "Logement sur le campus de Xi'an, grande ville universitaire de l'intérieur où le budget mensuel est le plus contenu du catalogue chinois.",
+      },
+      {
+        name: 'Lianjia (Beike) — location meublée',
+        city: 'Shenzhen',
+        type: 'studio',
+        pricePerMonth: 3500,
+        contact: 'https://www.ke.com',
+        description:
+          "Premier réseau d'agences immobilières de Chine, incontournable pour louer hors campus. Prévoir un compte bancaire local, un dépôt de garantie et l'enregistrement de résidence au commissariat.",
+      },
+      {
+        name: 'Ziroom — appartement partagé',
+        city: 'Beijing',
+        type: 'shared',
+        pricePerMonth: 3800,
+        contact: 'https://www.ziroom.com',
+        description:
+          "Colocation meublée à contrat standardisé et gestion en ligne, très répandue chez les jeunes actifs et étudiants de Pékin. Loyer souvent payable au trimestre.",
+      },
       {
         name: 'Tsinghua University — Résidence internationale',
         city: 'Beijing',
@@ -578,6 +1446,16 @@ async function main() {
   const manquants = studyCountriesSeed.filter(c => !catalog.some(b => b.country === c));
   if (manquants.length > 0) {
     console.warn(`⚠️  Pays d'études sans logement : ${manquants.join(', ')}`);
+  }
+
+  // Le même organisme peut revenir dans plusieurs villes (Homestay.com, WG-Gesucht…), mais
+  // deux fiches identiques (name, country, city) fusionneraient en base sans être visibles ici.
+  const vus = new Set<string>();
+  const doublons = catalog
+    .flatMap(b => b.places.map(p => `${p.name} | ${b.country} | ${p.city}`))
+    .filter(k => (vus.has(k) ? true : (vus.add(k), false)));
+  if (doublons.length > 0) {
+    throw new Error(`Doublons dans le catalogue :\n  ${doublons.join('\n  ')}`);
   }
 
   let created = 0;

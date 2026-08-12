@@ -14,6 +14,8 @@
     "db:seed:tourism-events": "tsx src/scripts/seed-tourism-events.ts",
     "db:seed:orientation": "tsx src/scripts/seed-orientation.ts",
     "db:seed:tourism-programs": "tsx src/scripts/seed-tourism-programs.ts",
+    "db:seed:banks": "tsx src/scripts/seed-banks-study-countries.ts",
+    "db:seed:packages": "tsx src/scripts/seed-packages-showcase.ts",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate"

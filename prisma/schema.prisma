@@ -112,13 +112,40 @@ model Package {
   isCustom                 Boolean  @default(false) @map("is_custom")
   isActive                 Boolean  @default(true) @map("is_active")
   order                    Int      @default(0)
-  createdAt                DateTime @default(now()) @map("created_at")
-  updatedAt                DateTime @updatedAt @map("updated_at")
+
+  // --- Grille commerciale (vitrine publique) -------------------------------
+  // Deux natures de package cohabitent volontairement dans cette table :
+  //  - `family = null`  => package du MOTEUR DE DEVIS (stories 3.2/3.3) : il porte des
+  //    catégories et sert au calcul du prix à la carte. Jamais affiché dans la vitrine.
+  //  - `family != null` => PALIER de la grille commerciale (Starter, Escape, Mix XXL…) :
+  //    prix d'appel figé et liste d'avantages, jamais mêlé au calcul du devis.
+  /// "study" | "tourism" | "mix" | "consultation" — null = package du moteur de devis.
+  family         String?
+  /// Identifiant lisible de l'URL / du lien CTA (ex. "study-starter").
+  slug           String?  @unique
+  /// Accroche courte du palier ("2 services au choix").
+  tagline        String?
+  /// Nombre de services annoncé sur la carte ("1 SERVICE", "3-4 SERVICES", "PREMIUM+").
+  serviceLabel   String?  @map("service_label")
+  /// Prix d'appel affiché « à partir de », en CENTIMES (cohérent avec basePriceCents).
+  priceFromCents Int      @default(0) @map("price_from_cents")
+  /// "once" = paiement unique | "month" = par mois (packages Mix du flyer).
+  billingPeriod  String   @default("once") @map("billing_period")
+  currency       String   @default("EUR")
+  /// Avantages listés sur la carte, dans l'ordre d'affichage.
+  features       String[]
+  /// Pastille éditoriale ("Le plus choisi") — vide = pas de pastille.
+  badge          String?
+  isHighlighted  Boolean  @default(false) @map("is_highlighted")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   categories PackageCategory[]
   purchases  Purchase[]
 
+  @@index([family, order])
   @@map("packages")
 }
 

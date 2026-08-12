@@ -10,7 +10,22 @@ export interface PackageData {
   isActive?: boolean;
   order?: number;
   categories?: string[];
+  // Grille commerciale (vitrine). `family` null = package du moteur de devis.
+  family?: string | null;
+  slug?: string | null;
+  tagline?: string | null;
+  serviceLabel?: string | null;
+  priceFromCents?: number;
+  billingPeriod?: string;
+  currency?: string;
+  features?: string[];
+  badge?: string | null;
+  isHighlighted?: boolean;
 }
+
+/** Familles de la grille commerciale — ordre d'affichage de la vitrine. */
+export const PACKAGE_FAMILIES = ["study", "tourism", "mix", "consultation"] as const;
+export const BILLING_PERIODS = ["once", "month"] as const;
 
 /** Erreur métier exploitable par les routes (→ 400 plutôt qu'un 500 opaque). */
 export class InvalidCategoriesError extends Error {
@@ -33,6 +48,17 @@ function formatPackage(p: any) {
     is_active: p.isActive,
     order: p.order,
     categories: (p.categories ?? []).map((c: any) => c.categoryId),
+    // Vitrine : null sur les packages du moteur de devis, renseigné sur les paliers.
+    family: p.family ?? null,
+    slug: p.slug ?? null,
+    tagline: p.tagline ?? null,
+    service_label: p.serviceLabel ?? null,
+    price_from_cents: p.priceFromCents ?? 0,
+    billing_period: p.billingPeriod ?? "once",
+    currency: p.currency ?? "EUR",
+    features: p.features ?? [],
+    badge: p.badge ?? null,
+    is_highlighted: p.isHighlighted ?? false,
     created_at: p.createdAt,
     updated_at: p.updatedAt,
   };
@@ -56,6 +82,34 @@ export class PackageModel {
   static async findAllPublic() {
     const packages = await prisma.package.findMany({
       where: { isActive: true },
+      orderBy: [{ order: "asc" }, { id: "asc" }],
+      include: INCLUDE_CATEGORIES,
+    });
+    return packages.map(formatPackage);
+  }
+
+  /**
+   * Paliers de la grille commerciale (vitrine publique), actifs uniquement.
+   * `family != null` est le seul critère : un package du moteur de devis n'a rien
+   * à faire dans une grille de prix d'appel, et inversement.
+   */
+  static async findShowcase() {
+    const packages = await prisma.package.findMany({
+      where: { isActive: true, family: { not: null } },
+      orderBy: [{ order: "asc" }, { id: "asc" }],
+      include: INCLUDE_CATEGORIES,
+    });
+    return packages.map(formatPackage);
+  }
+
+  /**
+   * Packages servant au CALCUL du devis (stories 3.2/3.3) : uniquement ceux du moteur.
+   * Sans ce filtre, un palier de la vitrine (catégories vides, prix d'appel) entrerait
+   * dans le moteur de recommandation et pourrait fausser un montant facturé.
+   */
+  static async findQuotable() {
+    const packages = await prisma.package.findMany({
+      where: { isActive: true, family: null },
       orderBy: [{ order: "asc" }, { id: "asc" }],
       include: INCLUDE_CATEGORIES,
     });
@@ -92,6 +146,16 @@ export class PackageModel {
           isCustom: data.isCustom ?? false,
           isActive: data.isActive ?? true,
           order: data.order ?? 0,
+          family: data.family ?? null,
+          slug: data.slug ?? null,
+          tagline: data.tagline ?? null,
+          serviceLabel: data.serviceLabel ?? null,
+          priceFromCents: data.priceFromCents ?? 0,
+          billingPeriod: data.billingPeriod ?? "once",
+          currency: data.currency ?? "EUR",
+          features: data.features ?? [],
+          badge: data.badge ?? null,
+          isHighlighted: data.isHighlighted ?? false,
         },
       });
 
@@ -123,6 +187,17 @@ export class PackageModel {
             isCustom: data.isCustom,
             isActive: data.isActive,
             order: data.order,
+            // `undefined` = champ absent du PATCH => Prisma n'y touche pas.
+            family: data.family,
+            slug: data.slug,
+            tagline: data.tagline,
+            serviceLabel: data.serviceLabel,
+            priceFromCents: data.priceFromCents,
+            billingPeriod: data.billingPeriod,
+            currency: data.currency,
+            features: data.features,
+            badge: data.badge,
+            isHighlighted: data.isHighlighted,
           },
         });
 

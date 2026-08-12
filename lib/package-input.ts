@@ -1,4 +1,4 @@
-import type { PackageData } from "@/src/models/Package";
+import { PACKAGE_FAMILIES, BILLING_PERIODS, type PackageData } from "@/src/models/Package";
 
 /**
  * Validation des entrées des routes admin packages.
@@ -34,7 +34,40 @@ export function validatePackageBody(body: any, { partial = false } = {}): string
     }
   }
   if (body.order !== undefined && !Number.isInteger(body.order)) return "order must be an integer";
+
+  // --- Grille commerciale (vitrine) ---
+  const family = body.family;
+  if (family !== undefined && family !== null && family !== "") {
+    if (!(PACKAGE_FAMILIES as readonly string[]).includes(family)) {
+      return `family must be one of ${PACKAGE_FAMILIES.join(", ")} (or null)`;
+    }
+  }
+  const priceFrom = body.price_from_cents ?? body.priceFromCents;
+  if (priceFrom !== undefined && invalidCents(priceFrom)) {
+    return "price_from_cents must be an integer >= 0 (cents)";
+  }
+  const billing = body.billing_period ?? body.billingPeriod;
+  if (billing !== undefined && !(BILLING_PERIODS as readonly string[]).includes(billing)) {
+    return `billing_period must be one of ${BILLING_PERIODS.join(", ")}`;
+  }
+  if (body.features !== undefined) {
+    if (!Array.isArray(body.features) || body.features.some((f: unknown) => typeof f !== "string")) {
+      return "features must be an array of strings";
+    }
+  }
+  if (body.currency !== undefined && (typeof body.currency !== "string" || body.currency.length !== 3)) {
+    return "currency must be a 3-letter code";
+  }
   return null;
+}
+
+/** "" (champ vidé dans un formulaire) et null valent EFFACEMENT ; undefined = ne pas toucher. */
+function optionalText(...candidates: unknown[]): string | null | undefined {
+  const value = candidates.find((c) => c !== undefined);
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  const trimmed = String(value).trim();
+  return trimmed === "" ? null : trimmed;
 }
 
 export function toPackageData(body: any): PackageData {
@@ -49,6 +82,18 @@ export function toPackageData(body: any): PackageData {
     isActive: body.is_active ?? body.isActive,
     order: body.order,
     categories: body.categories,
+    // Vitrine. Une famille vidée (« — Aucune — » dans l'admin) rebascule le package
+    // côté moteur de devis : c'est un choix explicite de l'admin, pas un oubli.
+    family: optionalText(body.family),
+    slug: optionalText(body.slug),
+    tagline: optionalText(body.tagline),
+    serviceLabel: optionalText(body.service_label, body.serviceLabel),
+    priceFromCents: body.price_from_cents ?? body.priceFromCents,
+    billingPeriod: body.billing_period ?? body.billingPeriod,
+    currency: body.currency,
+    features: body.features,
+    badge: optionalText(body.badge),
+    isHighlighted: body.is_highlighted ?? body.isHighlighted,
   };
 }
 

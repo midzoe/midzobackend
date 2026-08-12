@@ -72,7 +72,10 @@ export async function resolveQuoteRequest(body: any): Promise<ResolvedQuoteReque
   // Absente = seed jamais joué : échec explicite plutôt qu'un prix inventé.
   if (!config) throw new QuoteRequestError("Pricing config not initialized", 503);
 
-  const packages = (await PackageModel.findAllPublic()) as unknown as QuotePackage[];
+  // `findQuotable` et non `findAllPublic` : depuis la grille commerciale, la table
+  // `packages` contient aussi des paliers de vitrine (prix d'appel, aucune catégorie).
+  // Les laisser entrer ici mêlerait un prix d'affichage à un montant facturé.
+  const packages = (await PackageModel.findQuotable()) as unknown as QuotePackage[];
 
   return { categories, subcategoryIds, packages, config: config as unknown as QuoteConfig };
 }
