@@ -11,6 +11,7 @@
     "db:seed": "tsx src/scripts/seed-universities.ts",
     "db:seed:directory": "tsx src/scripts/seed-directory.ts",
     "db:seed:language-centers": "tsx src/scripts/seed-language-centers.ts",
+    "db:seed:language-centers-origin": "tsx src/scripts/seed-language-centers-origin.ts",
     "db:seed:tourism-events": "tsx src/scripts/seed-tourism-events.ts",
     "db:seed:orientation": "tsx src/scripts/seed-orientation.ts",
     "db:seed:tourism-programs": "tsx src/scripts/seed-tourism-programs.ts",

@@ -4,6 +4,7 @@ export * from './seed-banks-study-countries';
 export * from './seed-directory';
 export * from './seed-embassies';
 export * from './seed-language-centers';
+export * from './seed-language-centers-origin';
 export * from './seed-orientation';
 export * from './seed-packages-showcase';
 export * from './seed-tourism-events';
