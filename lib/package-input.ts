@@ -76,7 +76,13 @@ export function toPackageData(body: any): PackageData {
     name: body.name,
     description: body.description,
     basePriceCents: body.base_price_cents ?? body.basePriceCents,
-    pricePerSubcategoryCents: body.price_per_subcategory_cents ?? body.pricePerSubcategoryCents,
+    // `??` serait faux ici : `null` est une VALEUR (= « pas de prix propre, repli sur la
+    // config globale »), pas une absence. Avec `??`, vider le champ dans l'admin retombait
+    // sur `undefined` et Prisma ne touchait à rien — l'override devenait ineffaçable.
+    pricePerSubcategoryCents:
+      body.price_per_subcategory_cents !== undefined
+        ? body.price_per_subcategory_cents
+        : body.pricePerSubcategoryCents,
     isFullPackage: body.is_full_package ?? body.isFullPackage,
     isCustom: body.is_custom ?? body.isCustom,
     isActive: body.is_active ?? body.isActive,
