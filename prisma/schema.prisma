@@ -215,6 +215,8 @@ model Service {
   translationKey String?  @map("translation_key")
   isExternal     Boolean  @default(false) @map("is_external") // redirige vers une plateforme partenaire
   deliveryMode   String   @default("online") @map("delivery_mode") // "online"|"physical"|"hybrid"
+  steps          Json?    // étapes du parcours (tableau de chaînes), éditables par l'admin
+  isActive       Boolean  @default(true) @map("is_active") // masque la ligne sans la supprimer
   order          Int      @default(0)
   categoryId     String   @map("category_id")
   createdAt      DateTime @default(now()) @map("created_at")
