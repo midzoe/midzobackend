@@ -41,6 +41,34 @@ export async function sendVerificationEmail(email: string, code: string): Promis
   });
 }
 
+export async function sendPasswordResetEmail(email: string, code: string): Promise<void> {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.log(`[DEV] Password reset code for ${email}: ${code}`);
+    return;
+  }
+
+  const transporter = createTransporter();
+  const from = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+
+  await transporter.sendMail({
+    from,
+    to: email,
+    subject: `Midzoe — code de réinitialisation : ${code}`,
+    text: `Votre code de réinitialisation du mot de passe est : ${code}\n\nIl expire dans 15 minutes.\n\nSi vous n'avez rien demandé, ignorez cet email : votre mot de passe reste inchangé.`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+        <h2 style="color: #1a1a2e;">Réinitialiser votre mot de passe Midzoe</h2>
+        <p style="color: #555;">Saisissez ce code sur la page « Mot de passe oublié » :</p>
+        <div style="font-size: 36px; font-weight: bold; letter-spacing: 10px; padding: 24px; background: #f5f5f5; text-align: center; border-radius: 8px; color: #1a1a2e; margin: 24px 0;">
+          ${code}
+        </div>
+        <p style="color: #555;">Ce code expire dans <strong>15 minutes</strong>.</p>
+        <p style="color: #999; font-size: 13px;">Si vous n'avez rien demandé, ignorez cet email : votre mot de passe reste inchangé.</p>
+      </div>
+    `,
+  });
+}
+
 /** Montant en centimes → chaîne lisible dans la devise (ex. 4900 EUR → "49,00 €"). */
 function formatAmount(cents: number, currency: string): string {
   const amount = cents / 100;

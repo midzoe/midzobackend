@@ -44,6 +44,8 @@ export async function POST(request: NextRequest) {
       // Story 5.13 : profil d'admission.
       minimumGrade: body.minimumGrade,
       admissionRequirements: body.admissionRequirements,
+      // Statut public / privé ; `null` efface l'information.
+      isPublic: body.isPublic === undefined ? undefined : body.isPublic === null || body.isPublic === "" ? null : body.isPublic === true || body.isPublic === "true",
     });
 
     return corsJson({ success: true, data }, { status: 201 });

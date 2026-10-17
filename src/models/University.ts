@@ -18,6 +18,8 @@ export interface CreateUniversityData {
   // Story 5.13 : profil d'admission (note plancher publiée + conditions de dossier).
   minimumGrade?: string;
   admissionRequirements?: string;
+  // Statut : true = public, false = privé, null = non renseigné.
+  isPublic?: boolean | null;
 }
 
 export interface CreateProgramData {

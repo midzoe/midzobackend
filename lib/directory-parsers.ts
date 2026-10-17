@@ -165,3 +165,21 @@ export const parseServiceProvider = (b: any) => ({
   link: toText(b.link),
   isActive: toBool(b.isActive ?? b.is_active),
 });
+
+export const parseVocationalTraining = (b: any) => ({
+  occupation: toText(b.occupation),
+  domain: toText(b.domain),
+  employer: toText(b.employer),
+  employerType: toText(b.employerType ?? b.employer_type),
+  country: toText(b.country),
+  city: toText(b.city),
+  durationMonths: toInt(b.durationMonths ?? b.duration_months),
+  languageLevel: toText(b.languageLevel ?? b.language_level),
+  salary: toText(b.salary),
+  startDates: toList(b.startDates ?? b.start_dates),
+  requirements: toList(b.requirements),
+  documents: toList(b.documents),
+  description: toText(b.description),
+  applicationUrl: toText(b.applicationUrl ?? b.application_url),
+  isValidated: toBool(b.isValidated ?? b.is_validated),
+});

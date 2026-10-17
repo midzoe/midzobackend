@@ -27,6 +27,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       // Story 5.13 : profil d'admission.
       minimumGrade: body.minimumGrade,
       admissionRequirements: body.admissionRequirements,
+      // Statut public / privé ; `null` efface l'information.
+      isPublic: body.isPublic === undefined ? undefined : body.isPublic === null || body.isPublic === "" ? null : body.isPublic === true || body.isPublic === "true",
     });
 
     if (!data) return corsJson({ error: "University not found" }, { status: 404 });

@@ -118,11 +118,18 @@ export class UserModel {
     return formatUser(user);
   }
 
-  static async validatePassword(username: string, password: string) {
-    const user = await prisma.user.findUnique({
-      where: { username },
-      select: { ...USER_SELECT, passwordHash: true, emailVerified: true },
-    });
+  /**
+   * `identifier` = nom d'utilisateur OU email : le formulaire de connexion propose les
+   * deux, et l'inscription dérive le nom d'utilisateur de l'email sans le montrer.
+   */
+  static async validatePassword(identifier: string, password: string) {
+    const value = identifier.trim();
+    const select = { ...USER_SELECT, passwordHash: true, emailVerified: true };
+    const user =
+      (await prisma.user.findUnique({ where: { username: value }, select })) ??
+      (value.includes("@")
+        ? await prisma.user.findFirst({ where: { email: { equals: value, mode: "insensitive" } }, select })
+        : null);
 
     if (!user) return null;
 
@@ -136,7 +143,7 @@ export class UserModel {
       isValid = password === user.passwordHash;
       if (isValid) {
         const newHash = await bcrypt.hash(password, 10);
-        await prisma.user.update({ where: { username }, data: { passwordHash: newHash } });
+        await prisma.user.update({ where: { id: user.id }, data: { passwordHash: newHash } });
       }
     }
 
@@ -213,6 +220,54 @@ export class UserModel {
     }
 
     return { allowed: true };
+  }
+
+  /**
+   * Mot de passe oublié : code à 6 chiffres, haché, valable 15 min, un envoi par minute.
+   * Renvoie `null` quand aucun code ne doit partir (compte inconnu ou envoi trop rapproché) :
+   * la route répond pareil dans tous les cas, pour ne pas révéler quels emails existent.
+   */
+  static async createPasswordResetCode(email: string): Promise<{ code: string; email: string } | null> {
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: email.trim(), mode: "insensitive" } },
+      select: { id: true, email: true, passwordResetSentAt: true },
+    });
+    if (!user) return null;
+    if (user.passwordResetSentAt && Date.now() - user.passwordResetSentAt.getTime() < 60 * 1000) return null;
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordResetCode: await bcrypt.hash(code, 8),
+        passwordResetExpiry: new Date(Date.now() + 15 * 60 * 1000),
+        passwordResetSentAt: new Date(),
+      },
+    });
+    return { code, email: user.email };
+  }
+
+  static async resetPassword(email: string, code: string, newPassword: string) {
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: email.trim(), mode: "insensitive" } },
+      select: { id: true, passwordResetCode: true, passwordResetExpiry: true },
+    });
+    if (!user || !user.passwordResetCode) return { success: false, error: "invalid code" };
+    if (user.passwordResetExpiry && new Date() > user.passwordResetExpiry) return { success: false, error: "code expired" };
+    if (!(await bcrypt.compare(code, user.passwordResetCode))) return { success: false, error: "invalid code" };
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: await bcrypt.hash(newPassword, 10),
+        passwordResetCode: null,
+        passwordResetExpiry: null,
+        passwordResetSentAt: null,
+        // Recevoir le code prouve la possession de la boîte mail.
+        emailVerified: true,
+      },
+    });
+    return { success: true };
   }
 
   /**

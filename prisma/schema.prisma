@@ -29,6 +29,10 @@ model User {
   verificationCode       String?   @map("verification_code")
   verificationCodeExpiry DateTime? @map("verification_code_expiry")
   verificationCodeSentAt DateTime? @map("verification_code_sent_at")
+  // Mot de passe oublié : code à 6 chiffres haché (bcrypt), comme le code de vérification.
+  passwordResetCode      String?   @map("password_reset_code")
+  passwordResetExpiry    DateTime? @map("password_reset_expiry")
+  passwordResetSentAt    DateTime? @map("password_reset_sent_at")
   createdAt              DateTime  @default(now()) @map("created_at")
   updatedAt              DateTime  @updatedAt @map("updated_at")
 
@@ -880,6 +884,8 @@ model University {
   minimumGrade          String?  @map("minimum_grade")
   // Sélectivité et conditions de dossier en clair (concours, entretien, portfolio…).
   admissionRequirements String?  @map("admission_requirements")
+  // Statut de l'établissement : true = public, false = privé, null = non renseigné.
+  isPublic              Boolean? @map("is_public")
   createdAt             DateTime @default(now()) @map("created_at")
 
   // Relations
@@ -893,6 +899,11 @@ model UniversityProgram {
   universityId Int      @map("university_id")
   name         String
   level        String // "Bachelor" or "Master"
+  // Langues d'enseignement DU programme (vocabulaire FR : « Français », « Anglais »…) ;
+  // vide = non renseigné, on retombe alors sur University.requiredLanguage.
+  teachingLanguages String[] @default([]) @map("teaching_languages")
+  // « Présentiel » | « Hybride » | « Temps partiel » | « Formation continue » ; vide = non renseigné.
+  formats           String[] @default([])
   createdAt    DateTime @default(now()) @map("created_at")
 
   // Relations
@@ -1147,4 +1158,31 @@ model ServiceProvider {
   @@index([serviceType])
   @@index([country])
   @@map("service_providers")
+}
+
+// Formations professionnelles en alternance (Ausbildung) : une offre = un métier chez un
+// employeur ou une école, dans une ville. Rémunération en texte (barème indicatif publié).
+model VocationalTraining {
+  id              Int      @id @default(autoincrement())
+  occupation      String // métier, ex. « Pflegefachfrau / Pflegefachmann (soins infirmiers) »
+  domain          String // clé de domaine du parcours Study, ex. « nursing »
+  employer        String
+  employerType    String?  @map("employer_type") // « Hôpital universitaire », « Groupe hospitalier »…
+  country         String // vocabulaire anglais, comme University.country
+  city            String
+  durationMonths  Int?     @map("duration_months")
+  languageLevel   String?  @map("language_level") // niveau exigé, ex. « B1 (B2 recommandé) »
+  salary          String? // ex. « ≈ 1 340 – 1 500 € brut/mois selon l'année (indicatif) »
+  startDates      String[] @map("start_dates") // ex. « Avril », « Octobre »
+  requirements    String[]
+  documents       String[]
+  description     String?
+  applicationUrl  String?  @map("application_url")
+  isValidated     Boolean  @default(false) @map("is_validated")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([country])
+  @@index([domain])
+  @@map("vocational_trainings")
 }

@@ -22,3 +22,4 @@ export * from './TourismProgram';
 export * from './TouristSite';
 export * from './Training';
 export * from './Trip';
+export * from './VocationalTraining';
