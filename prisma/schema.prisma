@@ -141,6 +141,11 @@ model Package {
   /// Pastille éditoriale ("Le plus choisi") — vide = pas de pastille.
   badge          String?
   isHighlighted  Boolean  @default(false) @map("is_highlighted")
+  /// Grille tarifaire : nombre de services couverts (min..max) et valeur à la carte
+  /// maximale couverte (« jusqu'à 400 € »), en centimes. null = sans limite (FULL, consultation).
+  minServices    Int?     @map("min_services")
+  maxServices    Int?     @map("max_services")
+  valueCapCents  Int?     @map("value_cap_cents")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1185,4 +1190,23 @@ model VocationalTraining {
   @@index([country])
   @@index([domain])
   @@map("vocational_trainings")
+}
+
+// Grille tarifaire : prix unitaire de chaque service vendu (S1..S11 études, T1..T10 tourisme).
+// Les parcours Study / Tourisme comparent ce prix « à la carte » aux packages.
+model PricedService {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique // « S1 », « T10 »
+  family      String // « study » | « tourism »
+  name        String
+  complexity  String? // « Basic » | « Standard » | « Advanced » | « Advanced / On-site » | « Complex »
+  priceCents  Int      @map("price_cents")
+  currency    String   @default("EUR")
+  order       Int      @default(0)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([family, order])
+  @@map("priced_services")
 }

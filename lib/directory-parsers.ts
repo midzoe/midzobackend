@@ -183,3 +183,14 @@ export const parseVocationalTraining = (b: any) => ({
   applicationUrl: toText(b.applicationUrl ?? b.application_url),
   isValidated: toBool(b.isValidated ?? b.is_validated),
 });
+
+export const parsePricedService = (b: any) => ({
+  code: toText(b.code),
+  family: toText(b.family),
+  name: toText(b.name),
+  complexity: toText(b.complexity),
+  priceCents: toInt(b.priceCents ?? b.price_cents),
+  currency: toText(b.currency),
+  order: toInt(b.order),
+  isActive: toBool(b.isActive ?? b.is_active),
+});

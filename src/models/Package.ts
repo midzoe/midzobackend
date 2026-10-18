@@ -21,6 +21,10 @@ export interface PackageData {
   features?: string[];
   badge?: string | null;
   isHighlighted?: boolean;
+  // Grille tarifaire : couverture du palier (null = sans limite).
+  minServices?: number | null;
+  maxServices?: number | null;
+  valueCapCents?: number | null;
 }
 
 /** Familles de la grille commerciale — ordre d'affichage de la vitrine. */
@@ -59,6 +63,9 @@ function formatPackage(p: any) {
     features: p.features ?? [],
     badge: p.badge ?? null,
     is_highlighted: p.isHighlighted ?? false,
+    min_services: p.minServices ?? null,
+    max_services: p.maxServices ?? null,
+    value_cap_cents: p.valueCapCents ?? null,
     created_at: p.createdAt,
     updated_at: p.updatedAt,
   };
@@ -156,6 +163,9 @@ export class PackageModel {
           features: data.features ?? [],
           badge: data.badge ?? null,
           isHighlighted: data.isHighlighted ?? false,
+          minServices: data.minServices ?? null,
+          maxServices: data.maxServices ?? null,
+          valueCapCents: data.valueCapCents ?? null,
         },
       });
 
@@ -198,6 +208,9 @@ export class PackageModel {
             features: data.features,
             badge: data.badge,
             isHighlighted: data.isHighlighted,
+            minServices: data.minServices,
+            maxServices: data.maxServices,
+            valueCapCents: data.valueCapCents,
           },
         });
 

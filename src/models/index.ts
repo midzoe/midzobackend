@@ -11,6 +11,8 @@ export * from './OrientationResource';
 export * from './Package';
 export * from './Partner';
 export * from './PremiumCase';
+export * from './PricedService';
+export * from './PricedService';
 export * from './PricingConfig';
 export * from './Purchase';
 export * from './Quote';

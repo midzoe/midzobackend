@@ -8,6 +8,11 @@ import prisma from "../../lib/prisma";
 export const SETTING_DEFAULTS: Record<string, string> = {
   // Nombre d'événements attendus par pays de tourisme et par an.
   "tourism.events_required_per_country_per_year": "3",
+  // Options de paiement de la grille tarifaire : remise (%) selon le nombre d'échéances.
+  "payment.discount_pct.1": "10",
+  "payment.discount_pct.3": "5",
+  "payment.discount_pct.6": "2",
+  "payment.discount_pct.12": "1",
 };
 
 export class AppSettingModel {

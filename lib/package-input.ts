@@ -50,6 +50,16 @@ export function validatePackageBody(body: any, { partial = false } = {}): string
   if (billing !== undefined && !(BILLING_PERIODS as readonly string[]).includes(billing)) {
     return `billing_period must be one of ${BILLING_PERIODS.join(", ")}`;
   }
+  for (const [snake, camel] of [["min_services", "minServices"], ["max_services", "maxServices"]] as const) {
+    const v = body[snake] ?? body[camel];
+    if (v !== undefined && v !== null && v !== "" && !(Number.isInteger(Number(v)) && Number(v) >= 0)) {
+      return `${snake} must be an integer >= 0 (or null)`;
+    }
+  }
+  const cap = body.value_cap_cents ?? body.valueCapCents;
+  if (cap !== undefined && cap !== null && cap !== "" && invalidCents(Number(cap))) {
+    return "value_cap_cents must be an integer >= 0 (cents) or null";
+  }
   if (body.features !== undefined) {
     if (!Array.isArray(body.features) || body.features.some((f: unknown) => typeof f !== "string")) {
       return "features must be an array of strings";
@@ -68,6 +78,14 @@ function optionalText(...candidates: unknown[]): string | null | undefined {
   if (value === null) return null;
   const trimmed = String(value).trim();
   return trimmed === "" ? null : trimmed;
+}
+
+/** Entier optionnel : "" et null effacent (= sans limite), undefined ne touche à rien. */
+function optionalInt(...candidates: unknown[]): number | null | undefined {
+  const value = candidates.find((c) => c !== undefined);
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return null;
+  return Number(value);
 }
 
 export function toPackageData(body: any): PackageData {
@@ -100,6 +118,9 @@ export function toPackageData(body: any): PackageData {
     features: body.features,
     badge: optionalText(body.badge),
     isHighlighted: body.is_highlighted ?? body.isHighlighted,
+    minServices: optionalInt(body.min_services, body.minServices),
+    maxServices: optionalInt(body.max_services, body.maxServices),
+    valueCapCents: optionalInt(body.value_cap_cents, body.valueCapCents),
   };
 }
 
