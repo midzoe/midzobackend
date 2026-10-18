@@ -16,6 +16,14 @@ export interface CreateTripInput {
   destinations?: CreateTripDestinationInput[];
 }
 
+// Fiches de projet (JSON des parcours Études / Tourisme) : pas des prestations à préparer.
+export const RECORD_SERVICE_TYPES = new Set(["study_project", "tourism_project"]);
+
+/** Prestations réelles d'un voyage : hors fiches de projet et hors services retirés (cancelled). */
+export function activeServices<T extends { type: string; status: string }>(services: T[]): T[] {
+  return services.filter((s) => s.status !== "cancelled" && !RECORD_SERVICE_TYPES.has(s.type));
+}
+
 const FULL_INCLUDE = {
   destinations: { orderBy: { order: "asc" as const } },
   services: { orderBy: { createdAt: "asc" as const } },
@@ -171,13 +179,14 @@ export class TripModel {
     });
     if (!trip || trip.userId !== userId) return null;
 
-    const pendingServices = trip.services.filter((s) => s.status !== "done");
+    const services = activeServices(trip.services);
+    const pendingServices = services.filter((s) => s.status !== "done");
     const pendingItems = trip.checklistItems.filter((i) => !i.isDone);
     const missing = [
       ...pendingServices.map((s) => ({ kind: "service", label: s.label })),
       ...pendingItems.map((i) => ({ kind: "checklist", label: i.label })),
     ];
-    const total = trip.services.length + trip.checklistItems.length;
+    const total = services.length + trip.checklistItems.length;
     const done = total - missing.length;
     return {
       ready: missing.length === 0 && total > 0,

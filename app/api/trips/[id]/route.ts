@@ -28,6 +28,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const tripId = parseInt(id);
     if (isNaN(tripId)) return corsJson({ error: "Invalid id" }, { status: 400 });
     const body = await request.json();
+    {
+      const start = body.startDate ?? body.start_date;
+      const end = body.endDate ?? body.end_date;
+      if (start && end && new Date(end).getTime() < new Date(start).getTime()) {
+        return corsJson({ error: "endDate must be on or after startDate" }, { status: 400 });
+      }
+    }
     const trip = await TripModel.update(tripId, parseInt(auth.userId), {
       title: body.title, status: body.status,
       startDate: body.startDate ?? body.start_date, endDate: body.endDate ?? body.end_date,

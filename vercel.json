@@ -1,5 +1,8 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
-  "installCommand": "npm install && npm run db:generate"
+  "installCommand": "npm install && npm run db:generate",
+  "crons": [
+    { "path": "/api/trips/process-reminders", "schedule": "0 7 * * *" }
+  ]
 }

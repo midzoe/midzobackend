@@ -25,6 +25,13 @@ export async function POST(request: NextRequest) {
     if (body.destinations && !Array.isArray(body.destinations)) {
       return corsJson({ error: "destinations must be an array" }, { status: 400 });
     }
+    {
+      const start = body.startDate ?? body.start_date;
+      const end = body.endDate ?? body.end_date;
+      if (start && end && new Date(end).getTime() < new Date(start).getTime()) {
+        return corsJson({ error: "endDate must be on or after startDate" }, { status: 400 });
+      }
+    }
     const trip = await TripModel.create(parseInt(auth.userId), {
       title: body.title,
       status: body.status,

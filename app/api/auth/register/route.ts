@@ -47,14 +47,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const finalUsername = username || email.split("@")[0].replace(/[^a-z0-9_]/gi, "_");
-
-    const existingUsername = await UserModel.findByUsername(finalUsername);
-    if (existingUsername) {
-      return NextResponse.json(
-        { success: false, error: "username already exists" },
-        { status: 400 }
-      );
+    // Le site ne demande pas d'identifiant : il est tiré du début de l'email. Deux adresses
+    // homonymes (jean@gmail.com, jean@yahoo.fr) ne doivent pas bloquer la seconde inscription :
+    // on suffixe l'identifiant dérivé. Un identifiant choisi explicitement reste, lui, unique.
+    const derived = email.split("@")[0].replace(/[^a-z0-9_]/gi, "_");
+    let finalUsername = username || derived;
+    if (await UserModel.findByUsername(finalUsername)) {
+      if (username && username !== derived) {
+        return NextResponse.json(
+          { success: false, error: "username already exists" },
+          { status: 400 }
+        );
+      }
+      let suffix = 2;
+      while (await UserModel.findByUsername(`${derived}_${suffix}`)) suffix++;
+      finalUsername = `${derived}_${suffix}`;
     }
 
     await UserModel.create({

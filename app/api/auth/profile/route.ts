@@ -36,10 +36,18 @@ export async function PUT(request: NextRequest) {
       newsletter_tourism,
     } = body;
 
+    // L'email ne se change pas ici : sans mot de passe ni nouvelle vérification, un jeton volé
+    // suffirait à détourner le compte. Le changement passe par /auth/change-email.
+    if (typeof email === "string" && email.trim()) {
+      const current = await UserModel.findById(parseInt(auth.userId));
+      if (current && current.email.toLowerCase() !== email.trim().toLowerCase()) {
+        return corsJson({ error: "email change requires /auth/change-email" }, { status: 400 });
+      }
+    }
+
     const updatedUser = await UserModel.update(parseInt(auth.userId), {
       firstName: first_name,
       lastName: last_name,
-      email,
       phone,
       nationality,
       countryOfResidence: country_of_residence,
