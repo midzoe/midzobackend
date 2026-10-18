@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       draftTourismCountries,
       draftTourismPrograms,
       draftCountries,
-    ] = await Promise.all([
+    ] = await prisma.$transaction([
       prisma.user.count(),
       prisma.user.count({ where: { isPremium: true } }),
       prisma.news.count(),

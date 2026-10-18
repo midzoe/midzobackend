@@ -48,8 +48,10 @@ export async function GET(request: NextRequest) {
     // Fenêtre « nouveaux inscrits » des 30 derniers jours (KPI global, hors filtres).
     const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
+    // Une seule transaction = une seule connexion : 8 requêtes en parallèle saturaient le
+    // quota de connexions de la base (P1001 « Can't reach database server »).
     const [users, total, statTotal, statPremium, statAdmins, statVerified, statNew30d, statNewsletter] =
-      await Promise.all([
+      await prisma.$transaction([
         prisma.user.findMany({
           where,
           select: {

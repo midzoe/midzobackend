@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     if (!auth) return corsJson({ error: "Unauthorized" }, { status: 401 });
     if (!isAdmin(auth.role)) return corsJson({ error: "Forbidden" }, { status: 403 });
 
-    const [studyCountries, tourismCountries, tourismPrograms, countries] = await Promise.all([
+    const [studyCountries, tourismCountries, tourismPrograms, countries] = await prisma.$transaction([
       prisma.studyCountry.findMany({ where: { isValidated: false }, orderBy: { updatedAt: "desc" } }),
       prisma.tourismCountry.findMany({ where: { isValidated: false }, orderBy: { updatedAt: "desc" } }),
       prisma.tourismProgram.findMany({ where: { isValidated: false }, orderBy: { updatedAt: "desc" } }),

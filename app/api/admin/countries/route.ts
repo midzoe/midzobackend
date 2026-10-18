@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "50")));
     const skip = (page - 1) * limit;
 
-    const [items, total] = await Promise.all([
+    const [items, total] = await prisma.$transaction([
       prisma.country.findMany({ skip, take: limit, orderBy: { name: "asc" } }),
       prisma.country.count(),
     ]);
