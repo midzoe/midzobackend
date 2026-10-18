@@ -8,11 +8,17 @@ export class PremiumCaseModel {
     return prisma.premiumCase.create({ data: { userId } });
   }
 
-  static async update(userId: number, data: { status?: string; notes?: string; assignedTo?: string }) {
-    return prisma.premiumCase.upsert({
-      where: { userId },
-      create: { userId, status: data.status, notes: data.notes, assignedTo: data.assignedTo },
-      update: { status: data.status, notes: data.notes, assignedTo: data.assignedTo },
-    });
+  static async update(
+    userId: number,
+    data: { status?: string; notes?: string; assignedTo?: string; clientMessage?: string; nextStep?: string }
+  ) {
+    const fields = {
+      status: data.status,
+      notes: data.notes,
+      assignedTo: data.assignedTo,
+      clientMessage: data.clientMessage,
+      nextStep: data.nextStep,
+    };
+    return prisma.premiumCase.upsert({ where: { userId }, create: { userId, ...fields }, update: fields });
   }
 }

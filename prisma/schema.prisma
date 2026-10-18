@@ -54,6 +54,9 @@ model PremiumCase {
   status     String   @default("open") // « open » | « in_progress » | « closed »
   notes      String?
   assignedTo String?  @map("assigned_to")
+  /// Visible par le client (les `notes` restent internes).
+  clientMessage String? @map("client_message")
+  nextStep      String? @map("next_step")
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
@@ -176,6 +179,25 @@ model Purchase {
   /// enregistrement d'un même paiement (FR8, idempotence).
   stripeSessionId       String?   @unique @map("stripe_session_id")
   stripePaymentIntentId String?   @map("stripe_payment_intent_id")
+  /// Grille tarifaire : offre retenue (slug du palier, « alacarte », « consultation »…) et libellé lisible.
+  offerId               String?   @map("offer_id")
+  offerLabel            String?   @map("offer_label")
+  /// Paiement en 1, 3, 6 ou 12 fois ; échéances déjà encaissées.
+  installments          Int       @default(1)
+  installmentsPaid      Int       @default(0) @map("installments_paid")
+  /// « stripe » | « transfer » | « mobile_money » | « cash » | « other »
+  method                String    @default("stripe")
+  /// Référence externe d'un paiement hors ligne (virement, transaction Mobile Money…).
+  reference             String?
+  note                  String?
+  /// Admin qui a enregistré un paiement hors ligne.
+  recordedBy            Int?      @map("recorded_by")
+  /// Paiement échelonné par carte : abonnement Stripe borné au nombre d'échéances.
+  stripeSubscriptionId  String?   @unique @map("stripe_subscription_id")
+  /// Factures Stripe déjà comptées (idempotence des webhooks invoice.paid).
+  paidInvoiceIds        String[]  @default([]) @map("paid_invoice_ids")
+  /// Projet (trip) auquel l'achat se rapporte, le cas échéant.
+  tripId                Int?      @map("trip_id")
   createdAt             DateTime  @default(now()) @map("created_at")
   paidAt                DateTime? @map("paid_at")
 
@@ -714,6 +736,8 @@ model Trip {
   startDate      DateTime? @map("start_date")
   endDate        DateTime? @map("end_date")
   lastReminderAt DateTime? @map("last_reminder_at") // idempotence des emails de rappel (7.5)
+  /// Admin qui a créé le voyage pour le client (null = créé par le client).
+  createdByAdminId Int?    @map("created_by_admin_id")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
@@ -749,8 +773,13 @@ model TripService {
   destinationId Int?     @map("destination_id")
   type          String // « flight » | « accommodation » | « visa » | « insurance » | « bank » | « language » ...
   label         String
-  status        String   @default("pending") // « pending » | « done »
+  status        String   @default("pending") // « pending » | « in_progress » | « done » | « cancelled »
   data          Json?
+  /// Commentaire du conseiller, visible par le client.
+  note          String?
+  /// Lien vers un document (attestation, reçu, lettre d'admission…).
+  documentUrl   String?  @map("document_url")
+  updatedAt     DateTime? @updatedAt @map("updated_at")
   createdAt     DateTime @default(now()) @map("created_at")
 
   trip        Trip             @relation(fields: [tripId], references: [id], onDelete: Cascade)
@@ -789,6 +818,9 @@ model ContactMessage {
   userId      Int?     @map("user_id") // null => visiteur non connecté
   isPremium   Boolean  @default(false) @map("is_premium") // snapshot à l'envoi
   status      String   @default("new") // « new » | « read » | « archived »
+  /// Réponses envoyées depuis l'admin : [{ body, admin, sent_at }].
+  replies     Json?
+  repliedAt   DateTime? @map("replied_at")
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@index([category])
@@ -1209,4 +1241,22 @@ model PricedService {
 
   @@index([family, order])
   @@map("priced_services")
+}
+
+/// Journal des actions des administrateurs sur les comptes clients (qui a fait quoi, quand).
+/// Sans relation : la trace doit survivre à la suppression du client ou de l'admin.
+model AdminAuditLog {
+  id         Int      @id @default(autoincrement())
+  adminId    Int?     @map("admin_id")
+  adminName  String?  @map("admin_name")
+  action     String
+  targetType String   @map("target_type")
+  targetId   Int?     @map("target_id")
+  userId     Int?     @map("user_id")
+  details    Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("admin_audit_logs")
 }

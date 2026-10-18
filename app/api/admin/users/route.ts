@@ -2,6 +2,10 @@ import { NextRequest } from "next/server";
 import { getAuthWithRole, isAdmin } from "@/lib/auth";
 import { corsJson, corsOptions } from "@/lib/cors";
 import prisma from "@/lib/prisma";
+import { UserModel } from "@/src/models/User";
+import { logAdminAction } from "@/lib/audit";
+import { sendAccountInvitationEmail } from "@/lib/email";
+import crypto from "crypto";
 
 const SORTS: Record<string, any> = {
   recent: { createdAt: "desc" },
@@ -124,6 +128,64 @@ export async function GET(request: NextRequest) {
   }
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Compte créé par l'équipe pour un client reçu en agence ou au téléphone. Mot de passe
+ * aléatoire jamais communiqué : le client reçoit un code pour choisir le sien (même mécanisme
+ * que « mot de passe oublié », qui vérifie aussi son adresse).
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const auth = await getAuthWithRole(request);
+    if (!auth) return corsJson({ error: "Unauthorized" }, { status: 401 });
+    if (!isAdmin(auth.role)) return corsJson({ error: "Forbidden" }, { status: 403 });
+
+    const b = await request.json().catch(() => ({}));
+    const email = typeof b?.email === "string" ? b.email.trim() : "";
+    if (!EMAIL_RE.test(email)) return corsJson({ error: "valid email is required" }, { status: 400 });
+    const exists = await prisma.user.findFirst({ where: { email: { equals: email, mode: "insensitive" } }, select: { id: true } });
+    if (exists) return corsJson({ error: "email already exists", user_id: exists.id }, { status: 409 });
+
+    const username = await UserModel.availableUsername(email);
+    await UserModel.create({
+      username,
+      email,
+      password: crypto.randomBytes(24).toString("base64url"),
+      firstName: b.first_name || undefined,
+      lastName: b.last_name || undefined,
+      phone: b.phone || undefined,
+    });
+    const created = await prisma.user.update({
+      where: { email },
+      data: {
+        nationality: b.nationality || null,
+        countryOfResidence: b.country_of_residence || null,
+        ...(b.is_premium ? { isPremium: true, premiumSince: new Date() } : {}),
+      },
+      select: { id: true, email: true, firstName: true },
+    });
+
+    let invited = false;
+    if (b.send_invite !== false) {
+      const reset = await UserModel.createPasswordResetCode(email);
+      if (reset) {
+        try {
+          await sendAccountInvitationEmail(email, created.firstName ?? null, reset.code);
+          invited = true;
+        } catch (e) {
+          console.error("Invitation email failed:", e);
+        }
+      }
+    }
+    await logAdminAction(auth.userId, "user.create", { type: "user", id: created.id, userId: created.id, details: { email, invited } });
+    return corsJson({ success: true, data: { id: created.id, email: created.email, invited } }, { status: 201 });
+  } catch (error) {
+    console.error("Admin create user error:", error);
+    return corsJson({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function OPTIONS() {
-  return corsOptions("GET, OPTIONS");
+  return corsOptions("GET, POST, OPTIONS");
 }

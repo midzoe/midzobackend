@@ -259,3 +259,51 @@ export async function sendTripReminderEmail(
     `,
   });
 }
+
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/**
+ * Email simple (texte + HTML dérivé) : réponses du conseiller, avancement du dossier,
+ * invitations. Sans SMTP configuré, se réduit à un log (jamais de throw en dev).
+ */
+export async function sendPlainEmail(to: string, subject: string, paragraphs: string[], action?: { label: string; url: string }): Promise<void> {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.log(`[DEV] Email to ${to}: ${subject} — ${paragraphs.join(" | ")}${action ? ` [${action.url}]` : ""}`);
+    return;
+  }
+  const transporter = createTransporter();
+  const from = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+  await transporter.sendMail({
+    from,
+    to,
+    subject,
+    text: paragraphs.join("\n\n") + (action ? `\n\n${action.label} : ${action.url}` : "") + "\n\nL'équipe Midzoe",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+        ${paragraphs.map((p) => `<p style="color: #444; white-space: pre-line;">${escapeHtml(p)}</p>`).join("")}
+        ${action ? `<p><a href="${escapeHtml(action.url)}" style="display:inline-block;padding:10px 18px;background:#2f855a;color:#fff;border-radius:6px;text-decoration:none;">${escapeHtml(action.label)}</a></p>` : ""}
+        <p style="color: #999; font-size: 13px;">L'équipe Midzoe</p>
+      </div>
+    `,
+  });
+}
+
+/** Compte créé par l'équipe : code pour choisir son mot de passe (réutilise la réinitialisation). */
+export async function sendAccountInvitationEmail(email: string, firstName: string | null, code: string): Promise<void> {
+  const frontend = process.env.FRONTEND_URL || "http://localhost:5173";
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.log(`[DEV] Invitation code for ${email}: ${code}`);
+    return;
+  }
+  await sendPlainEmail(
+    email,
+    "Votre compte Midzoe a été créé",
+    [
+      firstName ? `Bonjour ${firstName},` : "Bonjour,",
+      "Votre conseiller Midzoe vient de créer votre espace client : vous y retrouverez votre dossier, vos voyages et les échanges avec l'équipe.",
+      `Pour l'activer, choisissez votre mot de passe avec ce code (valable 15 minutes, un nouveau code peut être demandé à tout moment) : ${code}`,
+    ],
+    { label: "Choisir mon mot de passe", url: `${frontend}/forgot-password?email=${encodeURIComponent(email)}&step=code` }
+  );
+}

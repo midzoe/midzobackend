@@ -3,6 +3,7 @@ import { getAuthWithRole, isAdmin } from "@/lib/auth";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { UserModel } from "@/src/models/User";
 import prisma from "@/lib/prisma";
+import { logAdminAction } from "@/lib/audit";
 
 const VALID_ROLES = ["user", "admin", "superadmin"];
 
@@ -69,6 +70,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     user = await UserModel.adminUpdate(targetId, { email, password, role });
     if (!user) return corsJson({ error: "User not found" }, { status: 404 });
 
+    const traced = { ...body };
+    delete traced.password;
+    await logAdminAction(auth.userId, "user.update", {
+      type: "user", id: targetId, userId: targetId,
+      details: { ...traced, ...(password ? { password: "(modifié)" } : {}) },
+    });
+
     return corsJson({ success: true, user });
   } catch (error) {
     console.error("Admin user patch error:", error);
@@ -92,7 +100,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     try {
-      await prisma.user.delete({ where: { id: targetId } });
+      const gone = await prisma.user.delete({ where: { id: targetId }, select: { email: true } });
+      await logAdminAction(auth.userId, "user.delete", { type: "user", id: targetId, userId: targetId, details: { email: gone.email } });
       return corsJson({ success: true });
     } catch (error: any) {
       if (error.code === "P2025") return corsJson({ error: "User not found" }, { status: 404 });

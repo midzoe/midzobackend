@@ -366,6 +366,26 @@ export class UserModel {
     }
   }
 
+  /** Mot de passe correct pour ce compte ? (anciens hash non-bcrypt compris). */
+  static async checkPassword(id: number, password: string) {
+    const user = await prisma.user.findUnique({ where: { id }, select: { passwordHash: true } });
+    if (!user) return false;
+    const isBcrypt = user.passwordHash.startsWith("$2a$") || user.passwordHash.startsWith("$2b$");
+    return isBcrypt ? bcrypt.compare(password, user.passwordHash) : password === user.passwordHash;
+  }
+
+  /**
+   * Identifiant libre dérivé de l'email (le site ne demande pas d'identifiant) :
+   * « jean » puis « jean_2 », « jean_3 »… pour les adresses homonymes.
+   */
+  static async availableUsername(email: string) {
+    const base = email.split("@")[0].replace(/[^a-z0-9_]/gi, "_") || "client";
+    if (!(await prisma.user.findUnique({ where: { username: base }, select: { id: true } }))) return base;
+    let suffix = 2;
+    while (await prisma.user.findUnique({ where: { username: `${base}_${suffix}` }, select: { id: true } })) suffix++;
+    return `${base}_${suffix}`;
+  }
+
   /**
    * Story 9.5 : changement de mot de passe self-service. Vérifie l'ancien avant d'écrire le nouveau.
    * Gère les anciens hash non-bcrypt (comparaison directe, comme validatePassword).

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getAuthWithRole, isAdmin } from "@/lib/auth";
+import prisma from "@/lib/prisma";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { ContactMessageModel } from "@/src/models/ContactMessage";
 
@@ -13,8 +14,22 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") || undefined;
     const category = searchParams.get("category") || undefined;
-    const items = await ContactMessageModel.findAll({ status, category });
-    return corsJson({ success: true, data: items, total: items.length });
+    const items: any[] = await ContactMessageModel.findAll({ status, category });
+
+    // Rattachement au compte client : par l'auteur connecté, sinon par l'email (insensible à la casse).
+    const emails = [...new Set(items.map((m) => String(m.email ?? "").toLowerCase()).filter(Boolean))];
+    const accounts = emails.length
+      ? await prisma.user.findMany({
+          where: { OR: emails.map((e) => ({ email: { equals: e, mode: "insensitive" as const } })) },
+          select: { id: true, email: true },
+        })
+      : [];
+    const byEmail = new Map(accounts.map((u) => [u.email.toLowerCase(), u.id]));
+    const data = items.map((m) => ({
+      ...m,
+      account_user_id: m.userId ?? m.user_id ?? byEmail.get(String(m.email ?? "").toLowerCase()) ?? null,
+    }));
+    return corsJson({ success: true, data, total: data.length });
   } catch (error) {
     console.error("Admin list contact messages error:", error);
     return corsJson({ error: "Internal server error" }, { status: 500 });
