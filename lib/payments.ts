@@ -32,7 +32,7 @@ async function activate(purchaseId: number) {
       userId: purchase.userId,
       type: "premium_purchase",
       title: "Paiement confirmé",
-      message: `Votre paiement pour ${label}${plan} est confirmé : votre dossier est ouvert et un conseiller MIDZOE vous accompagne.`,
+      message: `Votre paiement pour ${label}${plan} est confirmé : votre dossier est ouvert et un conseiller MIDZO vous accompagne.`,
       data: { purchase_id: purchase.id, amount_cents: purchase.amountCents, currency: purchase.currency },
     },
   });
@@ -142,7 +142,7 @@ export async function recordInvoiceFailed(invoice: Stripe.Invoice) {
   const message = `Le prélèvement de votre échéance pour ${purchase.offerLabel ?? "votre package"} a été refusé. Mettez à jour votre carte depuis le lien reçu de Stripe ou contactez votre conseiller.`;
   await prisma.notification.create({ data: { userId: purchase.userId, type: "payment_failed", title, message, data: { purchase_id: purchase.id } } });
   if (purchase.user?.email) {
-    try { await sendPlainEmail(purchase.user.email, `Midzoe — ${title}`, [purchase.user.firstName ? `Bonjour ${purchase.user.firstName},` : "Bonjour,", message]); }
+    try { await sendPlainEmail(purchase.user.email, `Midzo — ${title}`, [purchase.user.firstName ? `Bonjour ${purchase.user.firstName},` : "Bonjour,", message]); }
     catch (e) { console.error("Payment failed email error:", e); }
   }
   return { pastDue: true };

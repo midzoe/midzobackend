@@ -45,7 +45,7 @@ export async function informClient(userId: number, title: string, message: strin
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, firstName: true } });
     if (user?.email) {
       const frontend = process.env.FRONTEND_URL || "http://localhost:5173";
-      await sendPlainEmail(user.email, `Midzoe — ${title}`, [user.firstName ? `Bonjour ${user.firstName},` : "Bonjour,", message], {
+      await sendPlainEmail(user.email, `Midzo — ${title}`, [user.firstName ? `Bonjour ${user.firstName},` : "Bonjour,", message], {
         label: "Voir mon espace",
         url: `${frontend}/dashboard`,
       });

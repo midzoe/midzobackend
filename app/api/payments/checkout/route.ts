@@ -25,6 +25,10 @@ export async function POST(request: NextRequest) {
     if (!stripe) return corsJson({ error: "Stripe not configured" }, { status: 503 });
 
     const body = await request.json().catch(() => ({}));
+    // CGV et politique de remboursement acceptées avant tout paiement (horodatées dans l'achat).
+    if (body?.accept_terms !== true) {
+      return corsJson({ error: "terms must be accepted (accept_terms: true)" }, { status: 400 });
+    }
     const codes: string[] = Array.isArray(body?.codes) ? body.codes.filter((c: unknown) => typeof c === "string") : [];
     const installments = Number(body?.installments ?? 1);
     if (!(INSTALLMENTS as readonly number[]).includes(installments)) {
@@ -32,7 +36,8 @@ export async function POST(request: NextRequest) {
     }
 
     const grid = await loadGrid();
-    const { services, unknown, offers } = offersFor(codes, grid);
+    const travelers = Math.max(1, Math.min(50, Math.floor(Number(body?.travelers ?? 1)) || 1));
+    const { services, unknown, offers } = offersFor(codes, grid, { travelers });
     if (unknown.length) return corsJson({ error: `unknown service codes: ${unknown.join(", ")}` }, { status: 400 });
 
     const requested = typeof body?.offer_id === "string" ? body.offer_id : null;
@@ -61,7 +66,10 @@ export async function POST(request: NextRequest) {
       offer,
       plan,
       services: services.map((s) => ({ code: s.code, name: s.name, price_cents: s.price_cents })),
+      travelers,
+      traveler_policy: grid.traveler_policy,
       currency: grid.currency,
+      terms: { accepted_at: new Date().toISOString(), version: typeof body?.terms_version === "string" ? body.terms_version : null },
     };
 
     // Créé AVANT la session : le webhook ne peut pas arriver avant la ligne.

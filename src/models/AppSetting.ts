@@ -13,6 +13,9 @@ export const SETTING_DEFAULTS: Record<string, string> = {
   "payment.discount_pct.3": "5",
   "payment.discount_pct.6": "2",
   "payment.discount_pct.12": "1",
+  // Services voyage : prix par dossier, N voyageurs inclus, +X % par voyageur supplémentaire.
+  "tourism.travelers_included": "2",
+  "tourism.extra_traveler_pct": "25",
 };
 
 export class AppSettingModel {

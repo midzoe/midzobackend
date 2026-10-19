@@ -45,6 +45,7 @@ model User {
   premiumCase   PremiumCase?
 
   @@map("users")
+  reviews       Review[]
 }
 
 // Story 9.3 (FR38) : suivi de dossier séparé pour les clients premium (accompagnement humain).
@@ -1259,4 +1260,64 @@ model AdminAuditLog {
   @@index([userId])
   @@index([createdAt])
   @@map("admin_audit_logs")
+}
+
+/// Avis clients vérifiés : seuls les clients ayant payé un accompagnement peuvent en publier,
+/// après relecture par l'équipe (contenu jamais modifié). Supprimés avec le compte (RGPD).
+model Review {
+  id          Int       @id @default(autoincrement())
+  userId      Int?      @map("user_id")
+  purchaseId  Int?      @map("purchase_id")
+  /// Nom affiché (« Fatou D. ») : prénom + initiale, jamais l'email.
+  authorName  String    @map("author_name")
+  /// Pays d'origine affiché (facultatif).
+  country     String?
+  /// « study » | « tourism » | « consultation »
+  service     String
+  destination String?
+  rating      Int
+  title       String?
+  body        String
+  /// « pending » | « approved » | « rejected »
+  status      String    @default("pending")
+  /// Achat payé vérifié au moment du dépôt.
+  verified    Boolean   @default(false)
+  adminReply  String?   @map("admin_reply")
+  rejectReason String?  @map("reject_reason")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  publishedAt DateTime? @map("published_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, publishedAt])
+  @@index([userId])
+  @@map("reviews")
+}
+
+/// Circuits types (inspiration Tourisme) : itinéraire multi-pays prêt à personnaliser. Le prix
+/// « à partir de » de l'accompagnement Midzo est CALCULÉ depuis la grille tarifaire (services
+/// inclus, voyageurs de base) ; le budget sur place reste indicatif (fiche pays).
+model TourCircuit {
+  id            Int      @id @default(autoincrement())
+  slug          String   @unique
+  title         String
+  summary       String?
+  description   String?
+  image         String?
+  /// [{ country, label, cities: [], nights }] dans l'ordre du voyage
+  stops         Json
+  durationDays  Int      @map("duration_days")
+  /// Codes de la grille (T1..T10) inclus dans l'accompagnement
+  services      String[]
+  highlights    String[]
+  bestTime      String?  @map("best_time")
+  travelersBase Int      @default(2) @map("travelers_base")
+  translations  Json?
+  isPublished   Boolean  @default(false) @map("is_published")
+  order         Int      @default(0)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([isPublished, order])
+  @@map("tour_circuits")
 }

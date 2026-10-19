@@ -3,7 +3,7 @@ import { corsJson, corsOptions } from "@/lib/cors";
 import { PackageModel, PACKAGE_FAMILIES } from "@/src/models/Package";
 
 /**
- * Grille commerciale publique (flyer « MIDZOE PACKAGES ») : les paliers Study / Tourism /
+ * Grille commerciale publique (flyer « MIDZO PACKAGES ») : les paliers Study / Tourism /
  * Mix + la consultation. Sans authentification — c'est la page de prix, elle se lit avant
  * toute création de compte.
  *

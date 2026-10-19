@@ -40,6 +40,10 @@ export async function GET(_request: NextRequest) {
       })),
       packages,
       payment_options: paymentOptions,
+      traveler_policy: {
+        included: await AppSettingModel.getInt("tourism.travelers_included", 2, 1, 20),
+        extra_pct: await AppSettingModel.getInt("tourism.extra_traveler_pct", 25, 0, 100),
+      },
     });
   } catch (error) {
     console.error("Pricing error:", error);

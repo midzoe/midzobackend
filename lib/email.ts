@@ -25,17 +25,17 @@ export async function sendVerificationEmail(email: string, code: string): Promis
   await transporter.sendMail({
     from,
     to: email,
-    subject: `Your Midzoe verification code: ${code}`,
-    text: `Your verification code is: ${code}\n\nThis code expires in 15 minutes.\n\nIf you did not create a Midzoe account, you can safely ignore this email.`,
+    subject: `Your Midzo verification code: ${code}`,
+    text: `Your verification code is: ${code}\n\nThis code expires in 15 minutes.\n\nIf you did not create a Midzo account, you can safely ignore this email.`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
-        <h2 style="color: #1a1a2e;">Verify your Midzoe account</h2>
+        <h2 style="color: #1a1a2e;">Verify your Midzo account</h2>
         <p style="color: #555;">Enter the code below to complete your registration:</p>
         <div style="font-size: 36px; font-weight: bold; letter-spacing: 10px; padding: 24px; background: #f5f5f5; text-align: center; border-radius: 8px; color: #1a1a2e; margin: 24px 0;">
           ${code}
         </div>
         <p style="color: #555;">This code expires in <strong>15 minutes</strong>.</p>
-        <p style="color: #999; font-size: 13px;">If you did not create a Midzoe account, you can safely ignore this email.</p>
+        <p style="color: #999; font-size: 13px;">If you did not create a Midzo account, you can safely ignore this email.</p>
       </div>
     `,
   });
@@ -53,11 +53,11 @@ export async function sendPasswordResetEmail(email: string, code: string): Promi
   await transporter.sendMail({
     from,
     to: email,
-    subject: `Midzoe — code de réinitialisation : ${code}`,
+    subject: `Midzo — code de réinitialisation : ${code}`,
     text: `Votre code de réinitialisation du mot de passe est : ${code}\n\nIl expire dans 15 minutes.\n\nSi vous n'avez rien demandé, ignorez cet email : votre mot de passe reste inchangé.`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
-        <h2 style="color: #1a1a2e;">Réinitialiser votre mot de passe Midzoe</h2>
+        <h2 style="color: #1a1a2e;">Réinitialiser votre mot de passe Midzo</h2>
         <p style="color: #555;">Saisissez ce code sur la page « Mot de passe oublié » :</p>
         <div style="font-size: 36px; font-weight: bold; letter-spacing: 10px; padding: 24px; background: #f5f5f5; text-align: center; border-radius: 8px; color: #1a1a2e; margin: 24px 0;">
           ${code}
@@ -278,12 +278,12 @@ export async function sendPlainEmail(to: string, subject: string, paragraphs: st
     from,
     to,
     subject,
-    text: paragraphs.join("\n\n") + (action ? `\n\n${action.label} : ${action.url}` : "") + "\n\nL'équipe Midzoe",
+    text: paragraphs.join("\n\n") + (action ? `\n\n${action.label} : ${action.url}` : "") + "\n\nL'équipe Midzo",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
         ${paragraphs.map((p) => `<p style="color: #444; white-space: pre-line;">${escapeHtml(p)}</p>`).join("")}
         ${action ? `<p><a href="${escapeHtml(action.url)}" style="display:inline-block;padding:10px 18px;background:#2f855a;color:#fff;border-radius:6px;text-decoration:none;">${escapeHtml(action.label)}</a></p>` : ""}
-        <p style="color: #999; font-size: 13px;">L'équipe Midzoe</p>
+        <p style="color: #999; font-size: 13px;">L'équipe Midzo</p>
       </div>
     `,
   });
@@ -298,10 +298,10 @@ export async function sendAccountInvitationEmail(email: string, firstName: strin
   }
   await sendPlainEmail(
     email,
-    "Votre compte Midzoe a été créé",
+    "Votre compte Midzo a été créé",
     [
       firstName ? `Bonjour ${firstName},` : "Bonjour,",
-      "Votre conseiller Midzoe vient de créer votre espace client : vous y retrouverez votre dossier, vos voyages et les échanges avec l'équipe.",
+      "Votre conseiller Midzo vient de créer votre espace client : vous y retrouverez votre dossier, vos voyages et les échanges avec l'équipe.",
       `Pour l'activer, choisissez votre mot de passe avec ce code (valable 15 minutes, un nouveau code peut être demandé à tout moment) : ${code}`,
     ],
     { label: "Choisir mon mot de passe", url: `${frontend}/forgot-password?email=${encodeURIComponent(email)}&step=code` }

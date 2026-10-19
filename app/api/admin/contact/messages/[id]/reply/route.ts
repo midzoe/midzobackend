@@ -23,12 +23,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (text.length < 2) return corsJson({ error: "body is required" }, { status: 400 });
 
     const admin = await prisma.user.findUnique({ where: { id: Number(guard.auth.userId) }, select: { username: true, firstName: true, lastName: true } });
-    const adminName = admin ? [admin.firstName, admin.lastName].filter(Boolean).join(" ") || admin.username : "Conseiller MIDZOE";
+    const adminName = admin ? [admin.firstName, admin.lastName].filter(Boolean).join(" ") || admin.username : "Conseiller MIDZO";
 
-    await sendPlainEmail(message.email, `Re: ${message.subject ?? "Votre demande MIDZOE"}`, [
+    await sendPlainEmail(message.email, `Re: ${message.subject ?? "Votre demande MIDZO"}`, [
       `Bonjour ${message.name},`,
       text,
-      `${adminName} — MIDZOE`,
+      `${adminName} — MIDZO`,
       `— Votre message du ${message.createdAt.toLocaleDateString("fr-FR")} —\n${message.message}`,
     ]);
 

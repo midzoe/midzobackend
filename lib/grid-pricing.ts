@@ -27,7 +27,18 @@ export interface GridData {
   services: GridService[];
   packages: GridTier[];
   payment_options: { installments: number; discount_pct: number }[];
+  /** Services voyage : prix par dossier, N voyageurs inclus, +X % par voyageur supplémentaire. */
+  traveler_policy: { included: number; extra_pct: number };
 }
+
+/** Coefficient appliqué aux services voyage selon le nombre de voyageurs. */
+export function travelerFactor(travelers: number | undefined, grid: Pick<GridData, 'traveler_policy'>): number {
+  const n = Math.max(1, Math.min(50, Math.floor(travelers ?? 1)));
+  const { included, extra_pct } = grid.traveler_policy;
+  return 1 + Math.max(0, n - included) * (extra_pct / 100);
+}
+
+const roundEuro = (cents: number) => Math.round(cents / 100) * 100;
 
 export interface OfferLine {
   kind: "alacarte" | "tier" | "mix" | "consultation";
@@ -47,8 +58,13 @@ export async function loadGrid(): Promise<GridData> {
   for (const n of INSTALLMENTS) {
     payment_options.push({ installments: n, discount_pct: await AppSettingModel.getInt(`payment.discount_pct.${n}`, 0, 0, 50) });
   }
+  const traveler_policy = {
+    included: await AppSettingModel.getInt("tourism.travelers_included", 2, 1, 20),
+    extra_pct: await AppSettingModel.getInt("tourism.extra_traveler_pct", 25, 0, 100),
+  };
   return {
     currency: "EUR",
+    traveler_policy,
     services: services.map((s) => ({ code: s.code, family: s.family, name: s.name, price_cents: s.priceCents })),
     packages: (packages as any[]).map((p) => ({
       id: p.id, slug: p.slug, name: p.name, family: p.family, price_from_cents: p.price_from_cents,
@@ -67,13 +83,16 @@ function covers(t: GridTier, count: number, value: number) {
   return true;
 }
 
-function familyLines(family: "study" | "tourism", services: GridService[], tiers: GridTier[]): OfferLine[] {
+function familyLines(family: "study" | "tourism", services: GridService[], tiers: GridTier[], factor = 1): OfferLine[] {
   if (!services.length) return [];
   const value = sum(services);
-  const lines: OfferLine[] = [{ kind: "alacarte", family, label: `${family === "study" ? "Études" : "Tourisme"} à la carte`, valueCents: value, priceCents: value, serviceCount: services.length }];
+  const scaled = (c: number) => (factor === 1 ? c : roundEuro(c * factor));
+  const lines: OfferLine[] = [{ kind: "alacarte", family, label: `${family === "study" ? "Études" : "Tourisme"} à la carte`, valueCents: scaled(value), priceCents: scaled(value), serviceCount: services.length }];
+  // La couverture d'un palier porte sur les services choisis (valeur unitaire) ; le nombre de
+  // voyageurs s'applique ensuite au prix, de la même façon à la carte et en package.
   tiers
     .filter((t) => t.family === family && covers(t, services.length, value) && t.price_from_cents < value)
-    .forEach((t) => lines.push({ kind: "tier", family, label: t.name, slug: t.slug ?? undefined, packageId: t.id, valueCents: value, priceCents: t.price_from_cents, serviceCount: services.length }));
+    .forEach((t) => lines.push({ kind: "tier", family, label: t.name, slug: t.slug ?? undefined, packageId: t.id, valueCents: scaled(value), priceCents: scaled(t.price_from_cents), serviceCount: services.length }));
   return lines;
 }
 
@@ -88,7 +107,8 @@ function makeOffer(lines: OfferLine[]): Offer {
 }
 
 /** Toutes les offres possibles pour une sélection, de la moins chère à la plus chère. */
-export function offersFor(codes: string[], grid: GridData): { services: GridService[]; unknown: string[]; offers: Offer[] } {
+export function offersFor(codes: string[], grid: GridData, opts: { travelers?: number } = {}): { services: GridService[]; unknown: string[]; offers: Offer[] } {
+  const factor = travelerFactor(opts.travelers, grid);
   const byCode = new Map(grid.services.map((s) => [s.code, s]));
   const unique = [...new Set(codes)];
   const services = unique.map((c) => byCode.get(c)).filter((s): s is GridService => !!s);
@@ -98,7 +118,7 @@ export function offersFor(codes: string[], grid: GridData): { services: GridServ
   const offers: Offer[] = [];
   if (services.length) {
     const sl = familyLines("study", study, grid.packages);
-    const tl = familyLines("tourism", tourism, grid.packages);
+    const tl = familyLines("tourism", tourism, grid.packages, factor);
     for (const a of sl.length ? sl : [null]) {
       for (const b of tl.length ? tl : [null]) {
         const lines = [a, b].filter((l): l is OfferLine => !!l);
@@ -107,9 +127,13 @@ export function offersFor(codes: string[], grid: GridData): { services: GridServ
     }
     const value = sum(services);
     if (study.length && tourism.length) {
+      // Mix : seule la part voyage suit le nombre de voyageurs.
+      const tourismShare = sum(tourism) / value;
+      const mixFactor = 1 + (factor - 1) * tourismShare;
+      const scaledValue = roundEuro(sum(study) + sum(tourism) * factor);
       grid.packages
         .filter((t) => t.family === "mix" && (t.value_cap_cents == null || value <= t.value_cap_cents) && t.price_from_cents < value)
-        .forEach((t) => offers.push(makeOffer([{ kind: "mix", family: "mix", label: t.name, slug: t.slug ?? undefined, packageId: t.id, valueCents: value, priceCents: t.price_from_cents, serviceCount: services.length }])));
+        .forEach((t) => offers.push(makeOffer([{ kind: "mix", family: "mix", label: t.name, slug: t.slug ?? undefined, packageId: t.id, valueCents: scaledValue, priceCents: mixFactor === 1 ? t.price_from_cents : roundEuro(t.price_from_cents * mixFactor), serviceCount: services.length }])));
     }
   }
   // Consultation : toujours proposable, indépendante de la sélection.
