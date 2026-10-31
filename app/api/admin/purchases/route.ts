@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
     if (!Number.isInteger(userId)) return corsJson({ error: "user_id is required" }, { status: 400 });
     if (!offerLabel) return corsJson({ error: "offer_label is required" }, { status: 400 });
     if (!Number.isInteger(amountCents) || amountCents <= 0) return corsJson({ error: "amount_cents must be a positive integer" }, { status: 400 });
-    if (!(INSTALLMENTS as readonly number[]).includes(installments)) return corsJson({ error: "installments must be 1, 3, 6 or 12" }, { status: 400 });
+    if (!(INSTALLMENTS as readonly number[]).includes(installments)) return corsJson({ error: "installments must be 1, 2 or 3" }, { status: 400 });
     if (!Number.isInteger(installmentsPaid) || installmentsPaid < 1 || installmentsPaid > installments) {
       return corsJson({ error: "installments_paid must be between 1 and installments" }, { status: 400 });
     }

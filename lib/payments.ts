@@ -2,6 +2,7 @@ import type Stripe from "stripe";
 import prisma from "@/lib/prisma";
 import { sendPremiumWelcomeEmail, sendPlainEmail } from "@/lib/email";
 import { PremiumCaseModel } from "@/src/models/PremiumCase";
+import { confirmBooking } from "@/lib/consultation";
 
 /**
  * Activation après paiement — partagée par le webhook Stripe, la page de retour (confirmation
@@ -27,19 +28,33 @@ async function activate(purchaseId: number) {
 
   const label = purchase.offerLabel ?? (purchase.quote as any)?.package?.name ?? "votre package";
   const plan = purchase.installments > 1 ? ` (paiement en ${purchase.installments} fois)` : "";
+  // Consultation : le créneau est acquis ; il figure dans la confirmation et prévient l'équipe.
+  if (purchase.offerId === "consultation") await confirmBooking(purchase.id);
+  const slotText = (purchase.quote as any)?.consultation_slot_label as string | undefined;
+  const booked = slotText ? ` — rendez-vous ${slotText}` : "";
+  if (slotText) {
+    const inbox = process.env.CONTACT_INBOX || process.env.EMAIL_FROM || process.env.EMAIL_USER;
+    if (inbox) {
+      sendPlainEmail(inbox, `Consultation réservée — ${slotText}`, [
+        `${user?.firstName ?? "Un client"} (${user?.email ?? `utilisateur #${purchase.userId}`}) a payé une consultation.`,
+        `Créneau : ${slotText}.`,
+        `Achat #${purchase.id}.`,
+      ]).catch((e) => console.error("Consultation team email failed:", e));
+    }
+  }
   await prisma.notification.create({
     data: {
       userId: purchase.userId,
       type: "premium_purchase",
       title: "Paiement confirmé",
-      message: `Votre paiement pour ${label}${plan} est confirmé : votre dossier est ouvert et un conseiller MIDZO vous accompagne.`,
+      message: `Votre paiement pour ${label}${plan}${booked} est confirmé : votre dossier est ouvert et un conseiller MIDZO vous accompagne.`,
       data: { purchase_id: purchase.id, amount_cents: purchase.amountCents, currency: purchase.currency },
     },
   });
   if (user?.email) {
     try {
       await sendPremiumWelcomeEmail(user.email, user.firstName ?? null, {
-        packageName: `${label}${plan}`,
+        packageName: `${label}${plan}${booked}`,
         amountCents: purchase.amountCents,
         currency: purchase.currency,
       });

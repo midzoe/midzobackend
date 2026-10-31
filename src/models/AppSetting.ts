@@ -9,13 +9,15 @@ export const SETTING_DEFAULTS: Record<string, string> = {
   // Nombre d'événements attendus par pays de tourisme et par an.
   "tourism.events_required_per_country_per_year": "3",
   // Options de paiement de la grille tarifaire : remise (%) selon le nombre d'échéances.
+  // 31/10/2026 : paiement en 1, 2 ou 3 fois ; remise au premier achat (voir lib/payment-rules.ts).
   "payment.discount_pct.1": "10",
-  "payment.discount_pct.3": "5",
-  "payment.discount_pct.6": "2",
-  "payment.discount_pct.12": "1",
+  "payment.discount_pct.2": "0",
+  "payment.discount_pct.3": "0",
   // Services voyage : prix par dossier, N voyageurs inclus, +X % par voyageur supplémentaire.
   "tourism.travelers_included": "2",
   "tourism.extra_traveler_pct": "25",
+  // Consultation : horaires en heure d'Allemagne (JSON, voir lib/consultation.ts) — vide = défaut.
+  "consultation.availability": "",
 };
 
 export class AppSettingModel {

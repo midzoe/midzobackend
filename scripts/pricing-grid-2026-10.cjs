@@ -14,7 +14,7 @@ const SERVICES = [
   ['S1', 'study', 'Recherche et réservation de vol', 'Basic', 40],
   ['S2', 'study', 'Recherche de centre de langue', 'Basic', 60],
   ['S3', 'study', 'Aide à l’ouverture de compte bancaire', 'Standard', 90],
-  ['S4', 'study', 'Inscription à un cours de langue', 'Standard', 100],
+  ['S4', 'study', 'Cours de langue : choix du centre et inscription', 'Standard', 100],
   ['S5', 'study', 'Recherche de logement', 'Standard', 120],
   ['S6', 'study', 'Légalisation de documents / Apostille', 'Advanced', 150],
   ['S7', 'study', 'Accueil à l’aéroport + transfert vers le logement', 'Advanced / On-site', 150],
@@ -70,7 +70,8 @@ function features([, family, , min, max, cap, , , save]) {
 (async () => {
   for (const [code, family, name, complexity, price] of SERVICES) {
     const order = Number(code.slice(1));
-    const data = { family, name, complexity, priceCents: eur(price), currency: 'EUR', order, isActive: true };
+    // S2 (recherche de centre de langue) fusionné dans S4 le 31/10/2026 : gardé, mais inactif.
+    const data = { family, name, complexity, priceCents: eur(price), currency: 'EUR', order, isActive: code !== 'S2' };
     await prisma.pricedService.upsert({ where: { code }, update: data, create: { code, ...data } });
   }
   console.log(`services tarifés : ${SERVICES.length}`);

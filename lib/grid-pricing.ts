@@ -10,7 +10,8 @@ import { AppSettingModel } from "@/src/models/AppSetting";
  * est recalculé ici depuis la base.
  */
 
-export const INSTALLMENTS = [1, 3, 6, 12] as const;
+/** Paiement en 1, 2 ou 3 fois (31/10/2026 : plus de 6 ni de 12 fois). */
+export const INSTALLMENTS = [1, 2, 3] as const;
 
 export interface GridService { code: string; family: string; name: string; price_cents: number }
 export interface GridTier {
@@ -153,8 +154,10 @@ export function offersFor(codes: string[], grid: GridData, opts: { travelers?: n
 export interface PaymentPlan { installments: number; discountPct: number; perInstallmentCents: number; totalCents: number }
 
 /** Identique au front : remise sur le montant de l'offre, échéance arrondie à l'euro. */
-export function paymentPlan(priceCents: number, installments: number, grid: GridData): PaymentPlan {
-  const option = grid.payment_options.find((o) => o.installments === installments) ?? { installments: 1, discount_pct: 0 };
+export function paymentPlan(priceCents: number, installments: number, grid: GridData, opts: { discount?: boolean } = {}): PaymentPlan {
+  const found = grid.payment_options.find((o) => o.installments === installments) ?? { installments: 1, discount_pct: 0 };
+  // La remise ne vaut que pour le premier achat : le serveur la retire sinon.
+  const option = opts.discount === false ? { ...found, discount_pct: 0 } : found;
   const discounted = priceCents * (1 - option.discount_pct / 100);
   const n = Math.max(1, option.installments);
   const per = Math.round(discounted / n / 100) * 100;

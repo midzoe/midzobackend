@@ -42,6 +42,7 @@ model User {
   notifications Notification[]
   trips         Trip[]
   purchases     Purchase[]
+  consultationBookings ConsultationBooking[]
   premiumCase   PremiumCase?
 
   @@map("users")
@@ -205,8 +206,31 @@ model Purchase {
   // Relations
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   package Package? @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  consultationBooking ConsultationBooking?
 
   @@map("purchases")
+}
+
+/// Rendez-vous de consultation (31/10/2026). Un créneau = une ligne : `slot_start` est unique
+/// et le checkout réserve sous verrou (pas de chevauchement), donc deux clients ne peuvent
+/// jamais payer le même créneau. « held » = paiement Stripe en cours jusqu'à `hold_until`.
+model ConsultationBooking {
+  id              Int       @id @default(autoincrement())
+  slotStart       DateTime  @unique @map("slot_start")
+  durationMinutes Int       @map("duration_minutes")
+  userId          Int       @map("user_id")
+  purchaseId      Int       @unique @map("purchase_id")
+  status          String    @default("held") // "held" | "confirmed"
+  holdUntil       DateTime? @map("hold_until")
+  /// Fuseau du navigateur du client (ex. « Africa/Douala »), pour lui écrire l'heure chez lui.
+  clientTimezone  String?   @map("client_timezone")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+
+  @@index([status, holdUntil])
+  @@map("consultation_bookings")
 }
 
 model PackageCategory {

@@ -3,6 +3,7 @@ import { corsJson, corsOptions } from "@/lib/cors";
 import { PricedServiceModel } from "@/src/models/PricedService";
 import { PackageModel } from "@/src/models/Package";
 import { AppSettingModel } from "@/src/models/AppSetting";
+import { INSTALLMENTS } from "@/lib/grid-pricing";
 
 /**
  * Grille tarifaire publique : prix unitaire des services, paliers (Study / Tourism / Mix /
@@ -10,8 +11,6 @@ import { AppSettingModel } from "@/src/models/AppSetting";
  * package, remise de paiement) se fait côté site à partir de ces seules données : changer
  * un prix en admin suffit, sans redéploiement.
  */
-const INSTALLMENTS = [1, 3, 6, 12];
-
 export async function GET(_request: NextRequest) {
   try {
     const [services, packages] = await Promise.all([

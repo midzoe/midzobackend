@@ -213,8 +213,8 @@ const tiers: Tier[] = [
     billingPeriod: 'once',
     features: [
       'Analyse de votre projet avec un expert',
-      '5 % de remise sur le package choisi après la consultation',
-      'Frais de 25 € non remboursables si aucun package n’est retenu',
+      'Rendez-vous à choisir parmi nos créneaux, affichés à votre heure',
+      '25 € remboursés si vous prenez un package après la consultation',
     ],
     order: 31,
   },
