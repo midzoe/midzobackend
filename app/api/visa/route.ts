@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { VisaModel } from "@/src/models/Visa";
+import { withLocale } from "@/lib/translate";
 
 /**
  * Fiches visa côté site. Gate 9.2 / FR37 : seules les fiches validées sortent —
@@ -8,7 +9,7 @@ import { VisaModel } from "@/src/models/Visa";
  * `type` cible un type de visa précis (« Étudiant », « Tourisme »…) ; sans lui,
  * la fiche « Étudiant » est renvoyée à défaut la première disponible.
  */
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const from = searchParams.get("from");
@@ -37,3 +38,5 @@ export async function GET(request: NextRequest) {
 export async function OPTIONS() {
   return corsOptions("GET, OPTIONS");
 }
+
+export const GET = withLocale(getHandler);

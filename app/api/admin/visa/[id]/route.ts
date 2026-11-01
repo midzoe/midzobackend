@@ -4,8 +4,9 @@ import { corsJson, corsOptions } from "@/lib/cors";
 import { VisaModel } from "@/src/models/Visa";
 import { visaPayload, parseEmbassyId } from "@/lib/visa-input";
 import { validateVisaRule } from "@/lib/visa-guard";
+import { withAutoTranslate } from "@/lib/translate";
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function putHandler(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await getAuthWithRole(request);
     if (!auth) return corsJson({ error: "Unauthorized" }, { status: 401 });
@@ -73,3 +74,5 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 export async function OPTIONS() {
   return corsOptions("PUT, DELETE, OPTIONS");
 }
+
+export const PUT = withAutoTranslate(putHandler);

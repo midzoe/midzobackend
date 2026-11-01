@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-guard";
 import { logAdminAction } from "@/lib/audit";
 import { circuitInput, serializeCircuits } from "@/lib/circuits";
+import { withAutoTranslate } from "@/lib/translate";
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
   try {
     const guard = await requireAdmin(request);
     if (guard.error) return guard.error;
@@ -46,3 +47,5 @@ export async function POST(request: NextRequest) {
 export async function OPTIONS() {
   return corsOptions("GET, POST, OPTIONS");
 }
+
+export const POST = withAutoTranslate(postHandler);

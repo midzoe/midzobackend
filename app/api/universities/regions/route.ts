@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withLocale } from "@/lib/translate";
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   try {
     const regions = ["Europe"];
 
@@ -36,3 +37,5 @@ export async function OPTIONS() {
     },
   });
 }
+
+export const GET = withLocale(getHandler);

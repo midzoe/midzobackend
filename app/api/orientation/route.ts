@@ -3,10 +3,11 @@ import { corsJson, corsOptions } from "@/lib/cors";
 import { authenticateRequest } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { OrientationResourceModel } from "@/src/models/OrientationResource";
+import { withLocale } from "@/lib/translate";
 
 // Story 10.1/10.2 (FR34/FR35) : ressources d'orientation, filtrables type/catégorie.
 // Le champ `location` (lieu de formation) n'est renvoyé qu'aux premium (FR35).
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") || undefined;
@@ -40,3 +41,5 @@ export async function GET(request: NextRequest) {
 export async function OPTIONS() {
   return corsOptions("GET, OPTIONS");
 }
+
+export const GET = withLocale(getHandler);

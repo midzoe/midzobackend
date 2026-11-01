@@ -3,9 +3,10 @@ import { getAuthWithRole, isAdmin } from "@/lib/auth";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { StudyCountryModel } from "@/src/models/StudyCountry";
 import { enrichStudyCountry, EnrichNotConfiguredError, ENRICH_MODEL } from "@/lib/enrichStudyCountry";
+import { withAutoTranslate } from "@/lib/translate";
 
 // Story 5.5 : POST /api/admin/study-countries/enrich → génère un brouillon IA (isValidated=false).
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
   try {
     const auth = await getAuthWithRole(request);
     if (!auth) return corsJson({ error: "Unauthorized" }, { status: 401 });
@@ -53,3 +54,5 @@ export async function POST(request: NextRequest) {
 export async function OPTIONS() {
   return corsOptions("POST, OPTIONS");
 }
+
+export const POST = withAutoTranslate(postHandler);

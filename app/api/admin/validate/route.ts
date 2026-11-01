@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getAuthWithRole, isAdmin } from "@/lib/auth";
 import { corsJson, corsOptions } from "@/lib/cors";
 import prisma from "@/lib/prisma";
+import { withAutoTranslate } from "@/lib/translate";
 
 // Story 9.2 (FR37) : valide (ou dé-valide) un brouillon → bascule isValidated.
 // Un seul endpoint pour toutes les entités gatées ; consommé par l'UI 9.7.
@@ -12,7 +13,7 @@ const ENTITIES: Record<string, (id: number, v: boolean) => Promise<unknown>> = {
   country: (id, v) => prisma.country.update({ where: { id }, data: { isValidated: v } }),
 };
 
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
   try {
     const auth = await getAuthWithRole(request);
     if (!auth) return corsJson({ error: "Unauthorized" }, { status: 401 });
@@ -46,3 +47,5 @@ export async function POST(request: NextRequest) {
 export async function OPTIONS() {
   return corsOptions("POST, OPTIONS");
 }
+
+export const POST = withAutoTranslate(postHandler);

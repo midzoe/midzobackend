@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { TourismProgramModel } from "@/src/models/TourismProgram";
+import { withLocale } from "@/lib/translate";
 
 // Story 6.1 : programmes tourisme validés, filtrables par sous-catégorie (safari/sport).
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const subcategory = searchParams.get("subcategory") ?? undefined;
@@ -18,3 +19,5 @@ export async function GET(request: NextRequest) {
 export async function OPTIONS() {
   return corsOptions("GET, OPTIONS");
 }
+
+export const GET = withLocale(getHandler);

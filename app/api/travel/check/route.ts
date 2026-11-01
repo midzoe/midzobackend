@@ -6,6 +6,7 @@ import { VisaModel } from "@/src/models/Visa";
 import { EmbassyModel } from "@/src/models/Embassy";
 import { NotificationModel } from "@/src/models/Notification";
 import { countryFrom, countryThe } from "@/lib/country-labels";
+import { withLocale } from "@/lib/translate";
 
 type EmbassyBlock = {
   id: number;
@@ -111,7 +112,7 @@ function asList(value: unknown): string[] {
   return [];
 }
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const nationality = searchParams.get("nationality");
@@ -259,3 +260,5 @@ export async function GET(request: NextRequest) {
 export async function OPTIONS() {
   return corsOptions("GET, OPTIONS");
 }
+
+export const GET = withLocale(getHandler);

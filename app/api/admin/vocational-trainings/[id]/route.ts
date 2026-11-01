@@ -1,6 +1,7 @@
 import { adminItemRoute } from "@/lib/admin-crud";
 import { parseVocationalTraining } from "@/lib/directory-parsers";
 import { VocationalTrainingModel } from "@/src/models/VocationalTraining";
+import { withAutoTranslate } from "@/lib/translate";
 
 const handlers = adminItemRoute({
   model: VocationalTrainingModel,
@@ -8,6 +9,6 @@ const handlers = adminItemRoute({
   parse: parseVocationalTraining,
 });
 
-export const PUT = handlers.PUT;
+export const PUT = withAutoTranslate(handlers.PUT);
 export const DELETE = handlers.DELETE;
 export const OPTIONS = handlers.OPTIONS;

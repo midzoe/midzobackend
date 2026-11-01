@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { BankModel } from "@/src/models/Bank";
+import { withLocale } from "@/lib/translate";
 
 // Banques et comptes associés (la page les affiche en onglets, d'où les comptes inclus).
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const items = await BankModel.findAll({
@@ -20,3 +21,5 @@ export async function GET(request: NextRequest) {
 export async function OPTIONS() {
   return corsOptions("GET, OPTIONS");
 }
+
+export const GET = withLocale(getHandler);

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getAuthWithRole, isAdmin } from "@/lib/auth";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { UniversityModel } from "@/src/models/University";
+import { withAutoTranslate } from "@/lib/translate";
 
 // Story 5.1 : CRUD admin des universités. Le modèle métier (UniversityModel)
 // porte déjà toute la logique ; ces routes ne font qu'ajouter la garde admin.
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
   try {
     const auth = await getAuthWithRole(request);
     if (!auth) return corsJson({ error: "Unauthorized" }, { status: 401 });
@@ -61,3 +62,5 @@ export async function POST(request: NextRequest) {
 export async function OPTIONS() {
   return corsOptions("GET, POST, OPTIONS");
 }
+
+export const POST = withAutoTranslate(postHandler);

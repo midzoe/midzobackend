@@ -729,15 +729,22 @@ model TourismEvent {
 /// traduction dans chaque langue du site. Clé = empreinte SHA-256 du texte source : quand
 /// l'admin modifie un texte, la nouvelle version est traduite à son tour, l'ancienne reste
 /// inutilisée. `text` = source quand DeepL détecte que le texte est déjà dans cette langue.
+/// `manual` : traduction corrigée à la main en admin — DeepL ne la remplace jamais.
 model TextTranslation {
   id         Int      @id @default(autoincrement())
   sourceHash String   @map("source_hash") @db.VarChar(64)
   lang       String   @db.VarChar(5)
   source     String
   text       String
+  manual     Boolean  @default(false)
+  /// Origine : « script » (traduction en local), « auto » (à l'enregistrement en admin), « admin » (saisie à la main).
+  via        String   @default("script") @db.VarChar(10)
+  updatedBy  Int?     @map("updated_by")
   createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@unique([sourceHash, lang])
+  @@index([lang, manual])
   @@map("text_translations")
 }
 

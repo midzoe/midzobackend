@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { UniversityModel } from "@/src/models/University";
+import { withLocale } from "@/lib/translate";
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   try {
     const programs = await UniversityModel.getPrograms();
 
@@ -56,3 +57,5 @@ export async function OPTIONS() {
     },
   });
 }
+
+export const GET = withLocale(getHandler);

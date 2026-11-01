@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { TourismCountryModel } from "@/src/models/TourismCountry";
+import { withLocale } from "@/lib/translate";
 
-export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function getHandler(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const countryId = parseInt(id);
@@ -21,3 +22,5 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
 export async function OPTIONS() {
   return corsOptions("GET, OPTIONS");
 }
+
+export const GET = withLocale(getHandler);

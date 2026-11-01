@@ -4,10 +4,11 @@ import { corsJson, corsOptions } from "@/lib/cors";
 import { UniversityModel } from "@/src/models/University";
 import { meetsLevel } from "@/lib/cefr";
 import prisma from "@/lib/prisma";
+import { withLocale } from "@/lib/translate";
 
 // Story 5.3 : compare l'exigence de langue d'une université au profil de l'étudiant
 // authentifié (ses UserLanguage) et indique s'il l'atteint.
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function getHandler(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const decoded = authenticateRequest(request);
     if (!decoded) return corsJson({ error: "Unauthorized" }, { status: 401 });
@@ -50,3 +51,5 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function OPTIONS() {
   return corsOptions("GET, OPTIONS");
 }
+
+export const GET = withLocale(getHandler);

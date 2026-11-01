@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getAuthWithRole, isAdmin } from "@/lib/auth";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { StudyCountryModel } from "@/src/models/StudyCountry";
+import { withAutoTranslate } from "@/lib/translate";
 
 // Story 9.1 : liste admin des pays d'étude — inclut les brouillons (isValidated=false)
 // pour permettre la validation (9.2/9.7).
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
   try {
     const auth = await getAuthWithRole(request);
     if (!auth) return corsJson({ error: "Unauthorized" }, { status: 401 });
@@ -60,3 +61,5 @@ export async function POST(request: NextRequest) {
 export async function OPTIONS() {
   return corsOptions("POST, OPTIONS");
 }
+
+export const POST = withAutoTranslate(postHandler);

@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { StudyCountryModel } from "@/src/models/StudyCountry";
+import { withLocale } from "@/lib/translate";
 
-export async function GET(_: NextRequest) {
+async function getHandler(_: NextRequest) {
   try {
     const data = await StudyCountryModel.findPublic();
     return corsJson({ success: true, data });
@@ -15,3 +16,5 @@ export async function GET(_: NextRequest) {
 export async function OPTIONS() {
   return corsOptions("GET, OPTIONS");
 }
+
+export const GET = withLocale(getHandler);

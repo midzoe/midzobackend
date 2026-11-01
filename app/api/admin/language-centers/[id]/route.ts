@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getAuthWithRole, isAdmin } from "@/lib/auth";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { LanguageCenterModel } from "@/src/models/LanguageCenter";
+import { withAutoTranslate } from "@/lib/translate";
 
 /** Fiche complète pour l'édition (brouillon inclus). */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 /** Mise à jour partielle : les champs absents du corps ne sont pas touchés. */
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function putHandler(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await getAuthWithRole(request);
     if (!auth) return corsJson({ error: "Unauthorized" }, { status: 401 });
@@ -77,3 +78,5 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 export async function OPTIONS() {
   return corsOptions("GET, PUT, DELETE, OPTIONS");
 }
+
+export const PUT = withAutoTranslate(putHandler);

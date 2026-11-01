@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getAuthWithRole, isAdmin } from "@/lib/auth";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { OrientationResourceModel } from "@/src/models/OrientationResource";
+import { withAutoTranslate } from "@/lib/translate";
 
 const VALID_TYPES = ["guide", "book", "company", "certification"];
 
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
   try {
     const auth = await getAuthWithRole(request);
     if (!auth) return corsJson({ error: "Unauthorized" }, { status: 401 });
@@ -52,3 +53,5 @@ export async function POST(request: NextRequest) {
 export async function OPTIONS() {
   return corsOptions("GET, POST, OPTIONS");
 }
+
+export const POST = withAutoTranslate(postHandler);

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { TourismEventModel } from "@/src/models/TourismEvent";
+import { withLocale } from "@/lib/translate";
 
 /**
  * Story 6.2 (filtres story 6.8) : événements tourisme publiés.
@@ -8,7 +9,7 @@ import { TourismEventModel } from "@/src/models/TourismEvent";
  * du pays de tourisme, `subcategory` le libellé affiché (« Safari », « Sport »…).
  * Les notes internes ne sortent jamais d'ici.
  */
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const year = parseInt(searchParams.get("year") ?? "");
@@ -30,3 +31,5 @@ export async function GET(request: NextRequest) {
 export async function OPTIONS() {
   return corsOptions("GET, OPTIONS");
 }
+
+export const GET = withLocale(getHandler);

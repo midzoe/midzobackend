@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { AccommodationModel } from "@/src/models/Accommodation";
+import { withLocale } from "@/lib/translate";
 
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const country = searchParams.get("country") ?? undefined;
@@ -22,3 +23,5 @@ export async function GET(request: NextRequest) {
 export async function OPTIONS() {
   return corsOptions("GET, OPTIONS");
 }
+
+export const GET = withLocale(getHandler);

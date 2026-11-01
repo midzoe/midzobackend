@@ -2,8 +2,9 @@ import { NextRequest } from "next/server";
 import { getAuthWithRole, isAdmin } from "@/lib/auth";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { StudyCountryModel } from "@/src/models/StudyCountry";
+import { withAutoTranslate } from "@/lib/translate";
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function putHandler(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await getAuthWithRole(request);
     if (!auth) return corsJson({ error: "Unauthorized" }, { status: 401 });
@@ -67,3 +68,5 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 export async function OPTIONS() {
   return corsOptions("PUT, DELETE, OPTIONS");
 }
+
+export const PUT = withAutoTranslate(putHandler);

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { LanguageCenterModel } from "@/src/models/LanguageCenter";
+import { withLocale } from "@/lib/translate";
 
 /**
  * Story 5.4 (filtres langue/pays), enrichie story 5.14.
@@ -10,7 +11,7 @@ import { LanguageCenterModel } from "@/src/models/LanguageCenter";
  * catalogue universités (« Germany »), `language` le vocabulaire français (« Allemand »),
  * ce qui permet la redirection ?language=&country= depuis une fiche université.
  */
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const get = (key: string) => searchParams.get(key)?.trim() || undefined;
@@ -36,3 +37,5 @@ export async function GET(request: NextRequest) {
 export async function OPTIONS() {
   return corsOptions("GET, OPTIONS");
 }
+
+export const GET = withLocale(getHandler);

@@ -4,8 +4,9 @@ import prisma from "@/lib/prisma";
 import { parseId, requireAdmin } from "@/lib/admin-guard";
 import { logAdminAction } from "@/lib/audit";
 import { circuitInput, serializeCircuits } from "@/lib/circuits";
+import { withAutoTranslate } from "@/lib/translate";
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function putHandler(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const guard = await requireAdmin(request);
     if (guard.error) return guard.error;
@@ -51,3 +52,5 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 export async function OPTIONS() {
   return corsOptions("PUT, DELETE, OPTIONS");
 }
+
+export const PUT = withAutoTranslate(putHandler);

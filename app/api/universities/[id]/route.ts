@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { UniversityModel } from "@/src/models/University";
+import { withLocale } from "@/lib/translate";
 
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -178,3 +179,5 @@ export async function OPTIONS() {
     },
   });
 }
+
+export const GET = withLocale(getHandler);

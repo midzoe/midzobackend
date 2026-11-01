@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { BlogModel } from "@/src/models/Blog";
+import { withLocale } from "@/lib/translate";
 
-export async function GET(_: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+async function getHandler(_: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
     const { slug } = await params;
 
@@ -26,3 +27,5 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ slug: 
 export async function OPTIONS() {
   return corsOptions("GET, OPTIONS");
 }
+
+export const GET = withLocale(getHandler);

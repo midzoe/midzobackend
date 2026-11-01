@@ -1,10 +1,11 @@
 import { NextRequest } from "next/server";
 import { corsJson, corsOptions } from "@/lib/cors";
 import { InsurancePlanModel } from "@/src/models/InsurancePlan";
+import { withLocale } from "@/lib/translate";
 
 // Assurances. `audience` sépare les trois pages (général / étudiant / voyage),
 // `coverage_type` filtre sur une garantie précise.
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const items = await InsurancePlanModel.findAll({
@@ -23,3 +24,5 @@ export async function GET(request: NextRequest) {
 export async function OPTIONS() {
   return corsOptions("GET, OPTIONS");
 }
+
+export const GET = withLocale(getHandler);
