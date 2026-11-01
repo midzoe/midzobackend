@@ -87,13 +87,13 @@ export class UniversityModel {
       }
 
       if (filters.programName || filters.programLevel) {
+        // « Architecture||Architettura » : plusieurs intitulés que le site affiche sous la même
+        // traduction ; une université correspond si l'un d'eux figure dans ses programmes.
+        const names = (filters.programName ?? "").split("||").map(n => n.trim()).filter(Boolean);
         where.programs = {
           some: {
-            ...(filters.programName && {
-              name: {
-                contains: filters.programName
-              }
-            }),
+            ...(names.length === 1 && { name: { contains: names[0] } }),
+            ...(names.length > 1 && { OR: names.map(n => ({ name: { contains: n } })) }),
             ...(filters.programLevel && {
               level: {
                 equals: filters.programLevel
