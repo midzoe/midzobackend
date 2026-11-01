@@ -35,6 +35,9 @@ export const wantedFor = (texts: string[], lang: SiteLang) => (lang === SOURCE_L
 // ── Lecture (avec un cache court par instance : la mémoire change rarement) ──────────────────
 
 const CACHE_TTL_MS = 5 * 60_000;
+// Un texte sans traduction n'est retenu que 30 s : une traduction faite à l'enregistrement
+// (sur une autre instance) doit apparaître vite.
+const MISS_TTL_MS = 30_000;
 const cache = new Map<string, { text: string | null; at: number }>();
 
 export function forgetCachedTranslation(sourceHash: string, lang: string) {
@@ -51,7 +54,7 @@ export async function lookupTranslations(texts: string[], lang: SiteLang): Promi
   for (const t of unique) {
     const hash = hashText(t);
     const hit = cache.get(`${lang}:${hash}`);
-    if (hit && now - hit.at < CACHE_TTL_MS) {
+    if (hit && now - hit.at < (hit.text ? CACHE_TTL_MS : MISS_TTL_MS)) {
       if (hit.text && hit.text !== t) out[t] = hit.text;
     } else toFetch.set(hash, t);
   }
@@ -228,6 +231,7 @@ export async function translateMissing(
       data: batch.map((source, i) => ({ sourceHash: hashText(source), lang, source, text: result[i] ?? source, via: opts.via ?? "script" })),
       skipDuplicates: true,
     });
+    batch.forEach((source) => forgetCachedTranslation(hashText(source), lang));
     translated += batch.length;
     characters += batch.reduce((a, t) => a + t.length, 0);
   }
